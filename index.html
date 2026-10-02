@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>G10 Transport Scolaire V2 — V1.39 Reçus de paiement</title>
+<title>G10 Transport Scolaire V2 — V1.41 Reçu A4</title>
 <style>
 :root{--b:#123d78;--bg:#eef4fb;--line:#dce6f0;--green:#17a663;--red:#ef4750;--orange:#ff812d;--purple:#7a42e6;--yellow:#ffc83d;--blue:#1676f3}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#17324f}
@@ -923,6 +923,54 @@ button,input,select{font:inherit}.screen{display:none;padding:8px;max-width:1100
 @media(max-width:600px){
   .receipt-modal{padding:7px}.receipt-modal-card{padding:8px}
   .pay-grid-v139,.pay-view-v139{grid-template-columns:1fr}
+}
+
+
+/* V1.40 — reçu HD rendu en une seule image : net, non sélectionnable */
+.receipt-preview{
+  position:relative!important;
+  width:100%!important;
+  aspect-ratio:1/1!important;
+  background:#fff!important;
+  overflow:hidden!important;
+  border:1px solid #dce6ef!important;
+  border-radius:10px!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+.receipt-preview-img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+  -webkit-user-drag:none!important;
+  image-rendering:auto!important;
+}
+.receipt-value{display:none!important}
+
+
+/* V1.41 — reçu A4 */
+.receipt-preview{
+  width:100%!important;
+  max-width:760px!important;
+  aspect-ratio:210/297!important;
+  margin:0 auto!important;
+  background:#fff!important;
+  border:1px solid #d7e3ef!important;
+  border-radius:10px!important;
+  box-shadow:0 8px 24px rgba(16,50,93,.08)!important;
+  overflow:hidden!important;
+}
+.receipt-preview-img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  display:block!important;
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-user-drag:none!important;
 }
 
 </style>
@@ -4382,6 +4430,134 @@ var _v139Norm=normalizeRemoteState;
 normalizeRemoteState=function(){
   _v139Norm();
   ensureReceiptSeedV139()
+};
+
+
+
+/* ===== V1.40 Reçu HD : rendu SVG 1896 x 1896 ===== */
+function receiptSvgV140(x){
+  var student=xmlEscV139(x.name),guardian=xmlEscV139(x.guardian||"À renseigner"),method=xmlEscV139(receiptMethodV139(x));
+  var ref=xmlEscV139(receiptRefV139(x)),date=xmlEscV139(formatReceiptDateV139(x.paymentDate)),period=xmlEscV139(paymentPeriodLabelV139(x));
+  var amount=xmlEscV139(new Intl.NumberFormat("fr-FR").format(receiptPaidAmountV139(x))+" FCFA");
+
+  var studentSize=student.length>34?28:33;
+  var guardianSize=guardian.length>40?26:(guardian.length>32?29:31);
+
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="1896" height="1896" viewBox="0 0 1896 1896">'+
+    '<image href="'+RECEIPT_TEMPLATE_V139+'" x="0" y="0" width="1896" height="1896" preserveAspectRatio="none"/>'+
+    '<g font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#0c58b6">'+
+      '<text x="972" y="714" font-size="35">'+ref+'</text>'+
+      '<text x="952" y="809" font-size="35">'+date+'</text>'+
+      '<text x="772" y="904" font-size="'+studentSize+'">'+student+'</text>'+
+      '<text x="702" y="1000" font-size="'+guardianSize+'">'+guardian+'</text>'+
+      '<text x="948" y="1104" font-size="34">'+period+'</text>'+
+    '</g>'+
+    '<text x="1691" y="1247" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#4fa05a" font-size="44">'+amount+'</text>'+
+    '<text x="572" y="1406" font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#0b2f70" font-size="32">'+method+'</text>'+
+  '</svg>'
+}
+function receiptSvgUrlV140(x){
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(receiptSvgV140(x))
+}
+receiptPreviewHtmlV139=function(x){
+  return '<div class="receipt-preview" id="receiptPreviewV139"><img class="receipt-preview-img" draggable="false" src="'+receiptSvgUrlV140(x)+'" alt="Reçu de paiement G10"></div>'
+}
+receiptSvgV139=function(x){return receiptSvgV140(x)};
+
+makeReceiptPngBlobV139=function(x,cb){
+  var svg=receiptSvgV140(x),blob=new Blob([svg],{type:"image/svg+xml;charset=utf-8"}),url=URL.createObjectURL(blob),img=new Image();
+  img.onload=function(){
+    var c=document.createElement("canvas");c.width=1896;c.height=1896;
+    var ctx=c.getContext("2d");
+    ctx.imageSmoothingEnabled=true;
+    ctx.imageSmoothingQuality="high";
+    ctx.drawImage(img,0,0,1896,1896);
+    URL.revokeObjectURL(url);
+    c.toBlob(function(b){cb(b)},"image/png",1)
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);cb(null)};
+  img.src=url
+};
+
+printPaymentReceipt=function(){
+  var x=currentReceiptV139();if(!x)return;
+  var w=window.open("","_blank");
+  if(!w){alert("Autorise les fenêtres pop-up pour imprimer le reçu.");return}
+  var svg=receiptSvgV140(x);
+  var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Reçu '+xmlEscV139(x.name)+'</title><style>'+
+    'html,body{margin:0;background:#fff}body{display:flex;justify-content:center;align-items:flex-start}img{display:block;width:190mm;height:190mm;object-fit:contain}'+
+    '@page{size:A4 portrait;margin:8mm}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}img{width:190mm;height:190mm}}'+
+    '</style></head><body><img src="'+svgUrl+'" alt="Reçu G10"><script>window.onload=function(){setTimeout(function(){window.print()},350)}<\/script></body></html>');
+  w.document.close()
+};
+
+
+
+/* ===== V1.41 Reçu A4 ===== */
+function receiptTemplateMetricsV141(){
+  return {pageW:2480,pageH:3508,boxX:140,boxY:160,boxW:2200,boxH:2200};
+}
+function receiptFieldDataV141(x){
+  return {
+    student: xmlEscV139(x.name),
+    guardian: xmlEscV139(x.guardian||"À renseigner"),
+    method: xmlEscV139(receiptMethodV139(x)),
+    ref: xmlEscV139(receiptRefV139(x)),
+    date: xmlEscV139(formatReceiptDateV139(x.paymentDate)),
+    period: xmlEscV139(paymentPeriodLabelV139(x)),
+    amount: xmlEscV139(new Intl.NumberFormat("fr-FR").format(receiptPaidAmountV139(x))+" FCFA")
+  }
+}
+function receiptSvgA4V141(x){
+  var m=receiptTemplateMetricsV141(), d=receiptFieldDataV141(x), s=m.boxW/1896;
+  var bx=m.boxX, by=m.boxY;
+  function sx(v){ return Math.round(bx + v*s) }
+  function sy(v){ return Math.round(by + v*s) }
+  function ss(v){ return Math.round(v*s) }
+  var studentSize=d.student.length>34?28:33;
+  var guardianSize=d.guardian.length>40?26:(d.guardian.length>32?29:31);
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="'+m.pageW+'" height="'+m.pageH+'" viewBox="0 0 '+m.pageW+' '+m.pageH+'">'+
+    '<rect width="100%" height="100%" fill="#ffffff"/>'+
+    '<image href="'+RECEIPT_TEMPLATE_V139+'" x="'+m.boxX+'" y="'+m.boxY+'" width="'+m.boxW+'" height="'+m.boxH+'" preserveAspectRatio="none"/>'+
+    '<g font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#0c58b6">'+
+      '<text x="'+sx(972)+'" y="'+sy(714)+'" font-size="'+ss(35)+'">'+d.ref+'</text>'+
+      '<text x="'+sx(952)+'" y="'+sy(809)+'" font-size="'+ss(35)+'">'+d.date+'</text>'+
+      '<text x="'+sx(772)+'" y="'+sy(904)+'" font-size="'+ss(studentSize)+'">'+d.student+'</text>'+
+      '<text x="'+sx(702)+'" y="'+sy(1000)+'" font-size="'+ss(guardianSize)+'">'+d.guardian+'</text>'+
+      '<text x="'+sx(948)+'" y="'+sy(1104)+'" font-size="'+ss(34)+'">'+d.period+'</text>'+
+    '</g>'+
+    '<text x="'+sx(1691)+'" y="'+sy(1247)+'" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#4fa05a" font-size="'+ss(44)+'">'+d.amount+'</text>'+
+    '<text x="'+sx(572)+'" y="'+sy(1406)+'" font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#0b2f70" font-size="'+ss(32)+'">'+d.method+'</text>'+
+  '</svg>'
+}
+function receiptSvgUrlA4V141(x){
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(receiptSvgA4V141(x));
+}
+receiptPreviewHtmlV139=function(x){
+  return '<div class="receipt-preview" id="receiptPreviewV139"><img class="receipt-preview-img" draggable="false" src="'+receiptSvgUrlA4V141(x)+'" alt="Reçu de paiement G10 A4"></div>'
+};
+receiptSvgV139=function(x){ return receiptSvgA4V141(x) };
+makeReceiptPngBlobV139=function(x,cb){
+  var svg=receiptSvgA4V141(x),blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),img=new Image();
+  img.onload=function(){
+    var c=document.createElement('canvas');c.width=2480;c.height=3508;
+    var ctx=c.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(img,0,0,2480,3508);URL.revokeObjectURL(url);c.toBlob(function(b){cb(b)},'image/png',1)
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);cb(null)};
+  img.src=url
+};
+printPaymentReceipt=function(){
+  var x=currentReceiptV139();if(!x)return;
+  var w=window.open('','_blank');
+  if(!w){alert('Autorise les fenêtres pop-up pour imprimer le reçu.');return}
+  var svgUrl=receiptSvgUrlA4V141(x);
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Reçu '+xmlEscV139(x.name)+'</title><style>'+ 
+    'html,body{margin:0;background:#fff}body{display:flex;justify-content:center;align-items:flex-start}img{display:block;width:190mm;height:auto;max-height:277mm;object-fit:contain}'+
+    '@page{size:A4 portrait;margin:10mm}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;padding:0}img{width:190mm;height:auto;max-height:277mm}}'+
+    '</style></head><body><img src="'+svgUrl+'" alt="Reçu G10 A4"><script>window.onload=function(){setTimeout(function(){window.print()},350)}<\/script></body></html>');
+  w.document.close();
 };
 
 
