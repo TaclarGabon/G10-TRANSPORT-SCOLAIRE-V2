@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>G10 Transport Scolaire V2 — V1.41 Reçu A4</title>
+<title>G10 Transport Scolaire V2 — V1.42 Firebase formulaires stables</title>
 <style>
 :root{--b:#123d78;--bg:#eef4fb;--line:#dce6f0;--green:#17a663;--red:#ef4750;--orange:#ff812d;--purple:#7a42e6;--yellow:#ffc83d;--blue:#1676f3}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#17324f}
@@ -971,6 +971,14 @@ button,input,select{font:inherit}.screen{display:none;padding:8px;max-width:1100
   -webkit-user-select:none!important;
   user-select:none!important;
   -webkit-user-drag:none!important;
+}
+
+
+/* V1.42 — synchronisation Firebase sans fermer les champs actifs */
+.firebase-sync-pill{
+  min-width:132px;
+  text-align:center;
+  transition:none!important;
 }
 
 </style>
@@ -4559,6 +4567,145 @@ printPaymentReceipt=function(){
     '</style></head><body><img src="'+svgUrl+'" alt="Reçu G10 A4"><script>window.onload=function(){setTimeout(function(){window.print()},350)}<\/script></body></html>');
   w.document.close();
 };
+
+
+
+/* ===== V1.42 Firebase : formulaires stables =====
+   Problème corrigé :
+   une mise à jour reçue d'un autre appareil reconstruisait tout l'écran actif,
+   ce qui fermait les <select>, calendriers et champs pendant la saisie.
+*/
+var firebaseDeferredPayloadV142=null;
+var firebaseRemoteRenderTimerV142=null;
+var firebaseUserEditingV142=false;
+var firebaseLastLocalEditAtV142=0;
+
+function activeEditorV142(){
+  var el=document.activeElement;
+  if(!el)return false;
+  return !!(el.matches && el.matches('input,select,textarea,[contenteditable="true"]'));
+}
+function markEditingV142(){
+  firebaseUserEditingV142=true;
+}
+function markLocalEditV142(){
+  firebaseLastLocalEditAtV142=Date.now();
+}
+function normalFirebaseStatusV142(text){
+  if(!text)return text;
+  if(/aperçu local|erreur|permission|denied|auth|database/i.test(text))return text;
+  if(/^Firebase\s*:/i.test(text))return "Firebase : synchronisé";
+  return text;
+}
+
+/* Stabilise le badge : plus d'alternance "mise à jour reçue / synchronisé". */
+var _v142SetFirebaseStatus=setFirebaseStatus;
+setFirebaseStatus=function(text,kind){
+  var stable=normalFirebaseStatusV142(text);
+  _v142SetFirebaseStatus(stable,kind==="bad"?"bad":(stable==="Firebase : synchronisé"?"ok":kind))
+};
+
+function applyRemoteNowV142(payload){
+  if(!payload||!payload.state)return;
+  if(payload.meta&&payload.meta.clientId===FIREBASE_CLIENT_ID)return;
+
+  remoteApplying=true;
+  st=payload.state;
+  normalizeRemoteState();
+  localStorage.setItem("g10-safari-v122",JSON.stringify(st));
+  remoteApplying=false;
+
+  setFirebaseStatus("Firebase : synchronisé","ok");
+
+  clearTimeout(firebaseRemoteRenderTimerV142);
+  firebaseRemoteRenderTimerV142=setTimeout(function(){
+    if(activeEditorV142()||firebaseUserEditingV142){
+      firebaseDeferredPayloadV142=payload;
+      return
+    }
+    rerenderActiveScreen()
+  },180)
+}
+
+/* Remplace définitivement les anciennes versions de applyRemotePayload :
+   - pendant la saisie : on mémorise seulement la dernière mise à jour distante ;
+   - aucun innerHTML/rendu complet tant que le champ est actif.
+*/
+applyRemotePayload=function(payload){
+  if(!payload||!payload.state)return;
+  if(payload.meta&&payload.meta.clientId===FIREBASE_CLIENT_ID)return;
+
+  if(activeEditorV142()||firebaseUserEditingV142){
+    firebaseDeferredPayloadV142=payload;
+    setFirebaseStatus("Firebase : synchronisé","ok");
+    return
+  }
+  applyRemoteNowV142(payload)
+};
+
+function flushDeferredFirebaseV142(){
+  if(activeEditorV142()||firebaseUserEditingV142)return;
+  if(!firebaseDeferredPayloadV142)return;
+
+  /* Une saisie locale très récente a priorité sur une ancienne notification distante.
+     Le prochain événement Firebase resynchronisera les autres appareils. */
+  if(Date.now()-firebaseLastLocalEditAtV142<1400){
+    firebaseDeferredPayloadV142=null;
+    return
+  }
+
+  var p=firebaseDeferredPayloadV142;
+  firebaseDeferredPayloadV142=null;
+  applyRemoteNowV142(p)
+}
+
+/* Quand l'utilisateur entre dans un champ, Firebase n'a plus le droit
+   de reconstruire la page jusqu'à la sortie du champ. */
+document.addEventListener("focusin",function(e){
+  if(e.target && e.target.matches && e.target.matches('input,select,textarea,[contenteditable="true"]')){
+    markEditingV142()
+  }
+},true);
+
+document.addEventListener("input",function(e){
+  if(e.target && e.target.matches && e.target.matches('input,select,textarea,[contenteditable="true"]')){
+    markLocalEditV142()
+  }
+},true);
+
+document.addEventListener("change",function(e){
+  if(e.target && e.target.matches && e.target.matches('input,select,textarea,[contenteditable="true"]')){
+    markLocalEditV142()
+  }
+},true);
+
+document.addEventListener("focusout",function(e){
+  if(e.target && e.target.matches && e.target.matches('input,select,textarea,[contenteditable="true"]')){
+    setTimeout(function(){
+      firebaseUserEditingV142=activeEditorV142();
+      if(!firebaseUserEditingV142)setTimeout(flushDeferredFirebaseV142,250)
+    },80)
+  }
+},true);
+
+/* save() conserve le comportement existant, mais note l'activité locale
+   afin qu'une ancienne mise à jour distante ne réécrase pas immédiatement la saisie. */
+var _v142Save=save;
+save=function(){
+  firebaseLastLocalEditAtV142=Date.now();
+  _v142Save()
+};
+
+/* Si l'utilisateur clique ailleurs après une longue saisie, on peut appliquer
+   une éventuelle mise à jour distante sans interrompre le prochain contrôle. */
+document.addEventListener("click",function(e){
+  if(!(e.target && e.target.matches && e.target.matches('input,select,textarea,[contenteditable="true"]'))){
+    setTimeout(function(){
+      firebaseUserEditingV142=activeEditorV142();
+      if(!firebaseUserEditingV142)flushDeferredFirebaseV142()
+    },350)
+  }
+},true);
 
 
 save();
