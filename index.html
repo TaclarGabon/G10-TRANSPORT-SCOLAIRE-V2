@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>G10 Transport Scolaire V2 — V1.37 FINAL Réel Cartographie dynamique</title>
+<title>G10 Transport Scolaire V2 — V1.38 FINAL Circuit stable</title>
 <style>
 :root{--b:#123d78;--bg:#eef4fb;--line:#dce6f0;--green:#17a663;--red:#ef4750;--orange:#ff812d;--purple:#7a42e6;--yellow:#ffc83d;--blue:#1676f3}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#17324f}
@@ -842,6 +842,13 @@ button,input,select{font:inherit}.screen{display:none;padding:8px;max-width:1100
   .map-pin-name{font-size:8px}.map-pin-place{font-size:6.5px}
   .school-clean-grid.final-school-map{grid-template-columns:1fr}
   .final-school-map .school-satellite-clean{min-height:0!important}
+}
+
+
+/* V1.38 — Circuit stable : aucun onglet ne reste vide si une donnée Firebase manque */
+.circuit-error-safe{
+  background:#fff4e5;border:1px solid #efc47f;color:#7a5200;
+  border-radius:10px;padding:10px;font-size:9px;margin:8px 0
 }
 
 </style>
@@ -3880,6 +3887,219 @@ normalizeRemoteState=function(){
   applyRealModeV137();
   syncMorningRouteOrder()
 };
+
+
+
+/* ===== V1.38 — CIRCUIT STABLE ADMINISTRATION / GESTION ===== */
+function ensureCircuitStateV138(){
+  st.subs=Array.isArray(st.subs)?st.subs:[];
+  st.schools=(st.schools&&typeof st.schools==="object")?st.schools:{};
+  st.checks=(st.checks&&typeof st.checks==="object")?st.checks:{};
+  st.schoolOrder=Array.isArray(st.schoolOrder)?st.schoolOrder:[];
+  st.morningRouteOrder=Array.isArray(st.morningRouteOrder)?st.morningRouteOrder:[];
+  st.events=Array.isArray(st.events)?st.events:[];
+}
+function confirmedSubsV138(){
+  ensureCircuitStateV138();
+  return st.subs.filter(function(x){
+    return x.activeTransport!==false && (x.subscriptionStatus==="Confirmé" || x.payment==="Payé")
+  })
+}
+operationalSubs=function(){return confirmedSubsV138()};
+
+function placeRankV138(x){
+  var p=x.approxPlace||guessPlace(x);
+  var order=["Premier Campement","Akanda","Avorbam","Première Cité","Okala","Alibandeng"];
+  var i=order.indexOf(p);return i<0?99:i
+}
+function syncMorningOrderV138(){
+  ensureCircuitStateV138();
+  var eligible=confirmedSubsV138().filter(function(x){return !x.noMorning});
+  var ids=eligible.map(function(x){return String(x.id)});
+  st.morningRouteOrder=st.morningRouteOrder.filter(function(id){return ids.indexOf(String(id))>=0});
+  eligible.slice().sort(function(a,b){
+    return placeRankV138(a)-placeRankV138(b) || String(a.name||"").localeCompare(String(b.name||""))
+  }).forEach(function(x){
+    var id=String(x.id);
+    if(st.morningRouteOrder.indexOf(id)<0)st.morningRouteOrder.push(id)
+  });
+  return st.morningRouteOrder
+}
+morningRouteSubs=function(){
+  var eligible=confirmedSubsV138().filter(function(x){return !x.noMorning});
+  var order=syncMorningOrderV138();
+  return order.map(function(id){
+    return eligible.find(function(x){return String(x.id)===String(id)})
+  }).filter(Boolean)
+};
+function nextMapChildV138(){
+  var arr=morningRouteSubs();
+  for(var i=0;i<arr.length;i++){
+    if(arr[i].ride!=="Monté"&&arr[i].ride!=="Absent")return arr[i]
+  }
+  return null
+}
+nextMapChild=function(){return nextMapChildV138()};
+
+var V138_PLACE_POS={
+  "Premier Campement":[10.3,8.8],
+  "Akanda":[14.8,13.5],
+  "Avorbam":[20.0,21.5],
+  "Première Cité":[26.5,32.8],
+  "Okala":[31.5,41.0],
+  "Alibandeng":[44.0,65.0]
+};
+var V138_FIXED_POS={
+  "2":[10.3,8.8],
+  "3":[52.8,62.8],
+  "4":[40.7,67.0],
+  "5":[20.0,21.5]
+};
+function childPosV138(x){
+  if(Array.isArray(x.mapVisualPos)&&x.mapVisualPos.length===2)return x.mapVisualPos;
+  if(V138_FIXED_POS[String(x.id)])return V138_FIXED_POS[String(x.id)];
+  var place=x.approxPlace||guessPlace(x),base=V138_PLACE_POS[place];
+  if(!base)return null;
+  var same=morningRouteSubs().filter(function(z){return (z.approxPlace||guessPlace(z))===place});
+  var idx=same.findIndex(function(z){return String(z.id)===String(x.id)});
+  var offsets=[[0,0],[5,-3],[-4,3],[5,4],[-5,-4]];
+  var off=offsets[Math.max(0,idx)%offsets.length];
+  return [Math.min(94,Math.max(5,base[0]+off[0])),Math.min(92,Math.max(5,base[1]+off[1]))]
+}
+function pickupSvgV138(){
+  var arr=morningRouteSubs();
+  var plot=arr.map(function(x){return {x:x,p:childPosV138(x)}}).filter(function(o){return !!o.p});
+  if(!plot.length)return "";
+  var pts=plot.map(function(o){return o.p});
+  var base=pts.length>1?"M "+pts.map(function(p){return p[0]+" "+p[1]}).join(" L "):"";
+  var handled=0;
+  for(var i=0;i<plot.length;i++){
+    if(plot[i].x.ride==="Monté"||plot[i].x.ride==="Absent")handled++;else break
+  }
+  var donePts=pts.slice(0,handled);
+  var done=donePts.length>1?"M "+donePts.map(function(p){return p[0]+" "+p[1]}).join(" L "):"";
+  var current="";
+  if(handled>0&&handled<pts.length){
+    current="M "+pts[handled-1][0]+" "+pts[handled-1][1]+" L "+pts[handled][0]+" "+pts[handled][1]
+  }
+  return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;z-index:2">'+
+    (base?'<path class="pickup-route-base" d="'+base+'"></path>':'')+
+    (done?'<path class="pickup-route-done" d="'+done+'"></path>':'')+
+    (current?'<path class="pickup-route-current" d="'+current+'"></path>':'')+
+  '</svg>'
+}
+function ramassageMapV138(){
+  var arr=morningRouteSubs(),next=nextMapChildV138(),unknown=[];
+  var pins=arr.map(function(x){
+    var p=childPosV138(x);
+    if(!p){unknown.push(x);return ""}
+    var cls=x.ride==="Monté"?"done":x.ride==="Absent"?"absent":(next&&String(next.id)===String(x.id)?"next":"");
+    var shortName=String(x.name||"Élève").split(" ")[0];
+    return '<div class="map-person '+cls+'" style="left:'+p[0]+'%;top:'+p[1]+'%"><span class="map-pin-name">'+shortName+'</span><span class="map-pin-place">'+(x.approxPlace||guessPlace(x)||"Repère à confirmer")+'</span></div>'
+  }).join("");
+  var bp=next?childPosV138(next):null;
+  if(!bp&&arr.length)bp=childPosV138(arr[arr.length-1]);
+  if(!bp)bp=[10.3,8.8];
+  var noMorning=confirmedSubsV138().filter(function(x){return !!x.noMorning});
+  return '<div class="route-real-summary"><span class="route-real-chip real">'+confirmedSubsV138().length+' abonné(s) confirmé(s)</span><span class="route-real-chip">'+arr.length+' ramassage(s) matin</span><span class="route-real-chip">Véhicule basé à Bellevue</span></div>'+
+    '<div class="final-map-shell"><div class="map-reference map-pickup-final"><img src="'+MAP_RAMASSAGE_VALIDATED+'" alt="Carte de ramassage validée"><div class="map-overlay">'+pickupCleanMasksFinal()+pickupSvgV138()+pins+'<div class="map-bus" style="left:'+bp[0]+'%;top:'+bp[1]+'%">BUS</div></div></div>'+
+    '<div class="final-map-note"><b>Ramassage réel.</b> Seuls les abonnés confirmés apparaissent. Les nouveaux confirmés sont ajoutés au circuit ; Administration / Gestion peuvent ensuite corriger l’ordre.</div></div>'+
+    (unknown.length?'<div class="circuit-error-safe"><b>Position à confirmer :</b> '+unknown.map(function(x){return x.name}).join(", ")+'</div>':'')+
+    (noMorning.length?'<div class="no-morning-card"><b>Confirmé(s) hors ramassage matin :</b> '+noMorning.map(function(x){return x.name}).join(", ")+'</div>':'')
+}
+ramassageMapHtml=function(){return ramassageMapV138()};
+
+function schoolsV138(){
+  var confirmed=confirmedSubsV138(),seen={},available=[];
+  confirmed.forEach(function(x){
+    if(x.school&&!seen[x.school]){seen[x.school]=1;available.push(x.school)}
+  });
+  var preferred=["Quaben","Madonne","Bessieux","Prytanée militaire"];
+  var order=preferred.filter(function(s){return available.indexOf(s)>=0});
+  available.forEach(function(s){if(order.indexOf(s)<0)order.push(s)});
+  if(st.schoolOrder.length){
+    var saved=st.schoolOrder.filter(function(s){return available.indexOf(s)>=0});
+    order.forEach(function(s){if(saved.indexOf(s)<0)saved.push(s)});
+    order=saved
+  }
+  st.schoolOrder=order.slice();
+  return order
+}
+function schoolMapV138(){
+  var order=schoolsV138(),knownPos=(typeof SCHOOL_POS_FINAL==="object"&&SCHOOL_POS_FINAL)?SCHOOL_POS_FINAL:{};
+  var unknown=[];
+  var routeList='<div class="school-route-list">'+order.map(function(s,i){
+    var known=!!knownPos[s];if(!known)unknown.push(s);
+    return '<div class="school-route-stop"><div class="school-route-dot"></div><div><div class="school-route-name">'+(i+1)+' - '+s+(known?'':' <span class="position-warning">Position à confirmer</span>')+'</div><div class="school-route-sub">'+confirmedSubsV138().filter(function(x){return x.school===s}).length+' enfant(s) confirmé(s)</div></div></div>'
+  }).join("")+'</div>';
+  var pins=order.map(function(s){
+    var p=knownPos[s];if(!p)return "";
+    return '<div class="school-clean-label" style="left:'+p[0]+'%;top:'+p[1]+'%">'+s+'</div>'
+  }).join("");
+  var map='<div class="school-satellite-clean"><img src="'+MAP_SCHOOLS_VALIDATED+'" alt="Carte satellite validée des écoles"><div class="school-overlay-clean">'+pins+'</div><div class="map-corner-cover top-right"></div><div class="map-corner-cover bottom-left"></div><div class="map-corner-cover bottom-right"></div><div class="map-corner-cover bottom-mid"></div></div>';
+  return '<div class="school-clean-grid final-school-map">'+routeList+map+'</div>'+
+    '<div class="final-map-note"><b>Établissements.</b> Les écoles déjà localisées sont placées sur la carte. Une nouvelle école reste « Position à confirmer » tant que son repère n’a pas été validé.</div>'+
+    (unknown.length?'<div class="circuit-error-safe"><b>École(s) à localiser :</b> '+unknown.join(", ")+'</div>':'')
+}
+schoolRouteMapHtml=function(){return schoolMapV138()};
+
+function moveMorningV138(id,dir,ctx){
+  syncMorningOrderV138();
+  var i=st.morningRouteOrder.indexOf(String(id)),j=i+dir;
+  if(i<0||j<0||j>=st.morningRouteOrder.length)return;
+  var t=st.morningRouteOrder[i];st.morningRouteOrder[i]=st.morningRouteOrder[j];st.morningRouteOrder[j]=t;
+  save();
+  if(ctx==="gestion")gestionTab("circuit");else adminTab("circuit")
+}
+function reproposeMorningV138(ctx){
+  st.morningRouteOrder=confirmedSubsV138().filter(function(x){return !x.noMorning}).slice().sort(function(a,b){
+    return placeRankV138(a)-placeRankV138(b)||String(a.name||"").localeCompare(String(b.name||""))
+  }).map(function(x){return String(x.id)});
+  save();
+  if(ctx==="gestion")gestionTab("circuit");else adminTab("circuit")
+}
+function circuitBodyV138(ctx){
+  ensureCircuitStateV138();
+  var morning=morningRouteSubs(),confirmed=confirmedSubsV138(),schools=schoolsV138();
+  var childRows=morning.map(function(x,i){
+    return '<div class="circuit-safe-row"><div class="circuit-safe-num">'+(i+1)+'</div><div><b>'+x.name+'</b><div class="circuit-safe-note">'+(x.pickup||"Ramassage à confirmer")+' • '+(x.school||"École à confirmer")+'</div></div><div class="circuit-safe-tools"><button '+(i===0?'disabled':'')+' onclick="moveMorningV138(\''+x.id+'\',-1,\''+ctx+'\')">↑</button><button '+(i===morning.length-1?'disabled':'')+' onclick="moveMorningV138(\''+x.id+'\',1,\''+ctx+'\')">↓</button></div></div>'
+  }).join("");
+  var schoolRows=schools.map(function(s,i){
+    return '<div class="circuit-safe-row"><div class="circuit-safe-num">'+(i+1)+'</div><div><b>'+s+'</b><div class="circuit-safe-note">'+confirmed.filter(function(x){return x.school===s}).length+' enfant(s) confirmé(s)</div></div><div></div></div>'
+  }).join("");
+  return '<div class="notice"><b>Circuit réel.</b> La liste est reconstruite à partir des abonnés confirmés. Quand un nouvel abonné est confirmé, il rejoint automatiquement le circuit ; l’ordre reste ajustable avec ↑ ↓.</div>'+
+    '<div class="map-tools"><button class="btn blue" onclick="reproposeMorningV138(\''+ctx+'\')">Reproposer l’ordre géographique</button></div>'+
+    ramassageMapV138()+
+    '<div class="circuit-safe-grid"><div class="circuit-safe-card"><h3>1. Ordre des enfants à récupérer</h3>'+(childRows||'<div class="small">Aucun ramassage matin confirmé.</div>')+'</div><div class="circuit-safe-card"><h3>2. Ordre des établissements</h3>'+(schoolRows||'<div class="small">Aucun établissement confirmé.</div>')+'</div></div>'+
+    schoolMapV138()
+}
+function renderCircuitSafeV138(area){
+  var id=area==="gestion"?"gestionBody":"adminBody",b=document.getElementById(id);
+  if(!b)return;
+  try{
+    b.innerHTML=sectionHeader(area==="gestion"?"Gestion":"Administration","Circuit","Circuit réel des abonnés confirmés.")+circuitBodyV138(area)
+  }catch(err){
+    b.innerHTML='<div class="circuit-error-safe"><b>Le circuit n’a pas pu être affiché.</b><br>'+String(err&&err.message||err)+'</div>';
+    console.error("G10 circuit V1.38",err)
+  }
+}
+
+/* Dernière interception : garantit que Circuit ne conserve jamais le contenu de Dépenses / Rapports. */
+var _v138AdminTab=adminTab;
+adminTab=function(t){
+  currentTabs.admin=t;updateSpaceTitle("admin",t);
+  if(t==="circuit"){renderCircuitSafeV138("admin");return}
+  _v138AdminTab(t)
+};
+var _v138GestionTab=gestionTab;
+gestionTab=function(t){
+  currentTabs.gestion=t;updateSpaceTitle("gestion",t);
+  if(t==="circuit"){renderCircuitSafeV138("gestion");return}
+  _v138GestionTab(t)
+};
+
+ensureCircuitStateV138();
+syncMorningOrderV138();
 
 
 save();
