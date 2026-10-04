@@ -73,9 +73,24 @@
     var labels=["Statut paiement","Montant payé","Date","Mode de paiement","Reçu"];
     var tail=directChildren(row).slice(-5);
     for(var k=0;k<tail.length;k++){
-      if(tail[k].querySelector&&tail[k].querySelector(".g10v147-native-label"))continue;
-      var lab=document.createElement("div");lab.className="g10v147-native-label";lab.textContent=labels[k];
-      tail[k].insertBefore(lab,tail[k].firstChild);
+      if(!(tail[k].querySelector&&tail[k].querySelector(".g10v147-native-label"))){
+        var lab=document.createElement("div");lab.className="g10v147-native-label";lab.textContent=labels[k];
+        tail[k].insertBefore(lab,tail[k].firstChild);
+      }
+    }
+    var receipt=tail[4];
+    if(receipt){
+      var btn=receipt.querySelector("button");
+      if(btn){
+        var children=Array.prototype.slice.call(receipt.children);
+        for(var r=0;r<children.length;r++){
+          if(!children[r].classList.contains("g10v147-native-label")&&children[r]!==btn)children[r].style.display="none";
+        }
+        var nodesTxt=Array.prototype.slice.call(receipt.childNodes);
+        for(var t=0;t<nodesTxt.length;t++){
+          if(nodesTxt[t].nodeType===3&&String(nodesTxt[t].nodeValue||"").trim())nodesTxt[t].nodeValue="";
+        }
+      }
     }
   }
   function enhancePayments(){
@@ -85,7 +100,7 @@
   }
 
   var css=document.createElement("style");css.id="g10v147-row-style";
-  css.textContent=".g10v147-one-row{display:grid!important;grid-template-columns:minmax(220px,1.45fr) 112px 88px 88px 96px 132px 104px 106px 118px 132px 82px!important;gap:6px!important;align-items:end!important;padding:10px 12px!important}.g10v147-one-row>.g10v147-grid-child{width:auto!important;max-width:none!important;margin:0!important}.g10v147-cell{min-width:0}.g10v147-cell label,.g10v147-native-label{display:block;font-size:8px;line-height:1.1;color:#5d7185;font-weight:850;margin-bottom:4px;white-space:normal;min-height:18px}.g10v147-cell input,.g10v147-cell select,.g10v147-one-row>.g10v147-grid-child input,.g10v147-one-row>.g10v147-grid-child select{width:100%!important;min-width:0!important;box-sizing:border-box!important;border-radius:8px!important;padding:6px 6px!important;font-size:10px!important;min-height:34px!important}.g10v147-display{height:34px;box-sizing:border-box;display:flex;align-items:center;padding:6px 7px;border-radius:8px;background:#f3f7fb;color:#153a66;font-weight:900;font-size:10px}.g10v147-family{font-size:7px;line-height:1.05;margin-top:2px;color:#8a6200;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.g10v147-one-row button{min-width:68px!important;max-width:82px!important;padding:6px 8px!important;font-size:10px!important;min-height:34px!important}.g10v147-one-row>.g10v147-grid-child{align-self:end!important}@media(max-width:1300px){.g10v147-one-row{grid-template-columns:minmax(195px,1.35fr) 104px 82px 82px 88px 122px 96px 98px 110px 122px 76px!important;gap:4px!important}}";
+  css.textContent=".g10v147-one-row{display:grid!important;grid-template-columns:180px 128px 98px 98px 108px 145px 116px 118px 132px 145px 92px!important;gap:6px!important;align-items:end!important;padding:10px 10px!important}.g10v147-one-row>.g10v147-grid-child{width:auto!important;max-width:none!important;margin:0!important;align-self:end!important}.g10v147-cell{min-width:0}.g10v147-cell label,.g10v147-native-label{display:block;font-size:10px;line-height:1.1;color:#5d7185;font-weight:850;margin-bottom:5px;white-space:normal;min-height:20px}.g10v147-cell input,.g10v147-cell select,.g10v147-one-row>.g10v147-grid-child input,.g10v147-one-row>.g10v147-grid-child select{width:100%!important;min-width:0!important;box-sizing:border-box!important;border-radius:8px!important;padding:7px 7px!important;font-size:12px!important;min-height:38px!important}.g10v147-display{height:38px;box-sizing:border-box;display:flex;align-items:center;padding:7px 8px;border-radius:8px;background:#f3f7fb;color:#153a66;font-weight:900;font-size:12px}.g10v147-family{font-size:8.5px;line-height:1.05;margin-top:2px;color:#8a6200;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.g10v147-one-row button{min-width:76px!important;max-width:92px!important;padding:7px 10px!important;font-size:12px!important;min-height:38px!important}.g10v147-one-row>.g10v147-grid-child:first-child{font-size:125%!important}.g10v147-one-row>.g10v147-grid-child:last-child{overflow:hidden!important}.g10v147-one-row>.g10v147-grid-child:last-child .g10v147-native-label{position:static!important}.g10v147-one-row>.g10v147-grid-child:last-child button{display:block!important;margin:0!important}@media(max-width:1500px){.g10v147-one-row{grid-template-columns:170px 118px 90px 90px 100px 135px 108px 108px 122px 135px 86px!important;gap:5px!important}.g10v147-cell label,.g10v147-native-label{font-size:9px}.g10v147-cell input,.g10v147-cell select,.g10v147-one-row>.g10v147-grid-child input,.g10v147-one-row>.g10v147-grid-child select,.g10v147-display{font-size:11px!important}}";
   document.head.appendChild(css);
 
   function hook(){
