@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>G10 Transport Scolaire — Test QR</title>
 <style>
 :root{--b:#123d78;--g:#0a8751;--y:#f3c62f;--bg:#eef4fb;--line:#dce6f0;--red:#d93f49}
@@ -19,7 +22,7 @@ button{border:0;border-radius:10px;padding:9px 11px;font-weight:900;font-size:10
 </head>
 <body>
 <div class="wrap">
-  <div class="hero"><h1>G10 TRANSPORT SCOLAIRE — Test QR</h1><p>Prototype connecté au même état Firebase que l'application. Chaque élève reçoit une référence QR selon son ordre d'enregistrement.</p><span id="fb" class="status">Connexion Firebase…</span></div>
+  <div class="hero"><h1>G10 TRANSPORT SCOLAIRE — Test QR</h1><p>Prototype connecté au même état Firebase que l'application. Chaque élève reçoit une référence QR selon son ordre d'enregistrement.</p><span id="fb" class="status">Connexion Firebase…</span><span class="status" style="margin-left:6px">QR URL V2</span></div>
   <div class="card"><h2>Références QR attribuées</h2><div class="small">Exemple : le 1er dossier enregistré reçoit G10-TP-SCOL-QR001, le 2e QR002, etc. Le QR ne contient aucune adresse ni numéro de téléphone.</div><div id="kids" class="grid"></div></div>
   <div class="card"><h2>Montée par QR</h2><div class="small">Scanne le badge au moment où l'enfant monte. Son statut passe automatiquement à « Monté » dans l'application principale et Firebase.</div><div class="actions"><button class="blue" onclick="startScanner()">📷 Ouvrir la caméra</button><button id="testBtn" class="light" onclick="testFirstMorning()">Test réel QR002</button></div><div id="reader" class="reader"></div><div class="manual"><input id="manual" placeholder="G10-TP-SCOL-QR002"><button class="blue" onclick="manualScan()">Valider le code</button></div><div id="result" class="result">En attente d'un scan.</div></div>
 </div>
@@ -64,7 +67,7 @@ function showBadge(id){
   document.getElementById("modalTitle").textContent="Badge QR de "+x.name;
   document.getElementById("badgeHost").innerHTML='<div class="badge"><div class="badgeTop"><div class="logo"><span class="g">G</span>10 TRANSPORTS</div><div class="school">TRANSPORT SCOLAIRE • ZONE AKANDA</div></div><div class="badgeBody"><div><div class="kidname">'+escapeHtml(x.name)+'</div><div class="meta">'+escapeHtml(x.school||"")+'<br>'+escapeHtml(x.className||"")+'<br>Badge individuel G10</div></div><div id="qrbox" class="qrbox"></div></div><div class="qrlabel">'+x.qrRef+'</div></div>';
   document.getElementById("modal").classList.add("open");
-  setTimeout(()=>{new QRCode(document.getElementById("qrbox"),{text:location.origin+location.pathname+"?code="+encodeURIComponent(x.qrRef),width:138,height:138,correctLevel:QRCode.CorrectLevel.H})},20);
+  setTimeout(()=>{new QRCode(document.getElementById("qrbox"),{text:location.origin+location.pathname+"?code="+encodeURIComponent(x.qrRef)+"&v=2",width:138,height:138,correctLevel:QRCode.CorrectLevel.H})},20);
 }
 function closeBadge(){document.getElementById("modal").classList.remove("open")}
 function setResult(msg,kind){const el=document.getElementById("result");el.textContent=msg;el.className="result "+(kind||"")}
