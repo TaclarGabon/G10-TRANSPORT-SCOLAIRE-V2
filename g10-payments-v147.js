@@ -70,6 +70,13 @@
     row.classList.add("g10v147-one-row");
     var now=directChildren(row);
     for(var j=0;j<now.length;j++){now[j].classList.add("g10v147-grid-child");now[j].style.minWidth="0"}
+    var labels=["Statut paiement","Montant payé","Date","Mode de paiement","Reçu"];
+    var tail=directChildren(row).slice(-5);
+    for(var k=0;k<tail.length;k++){
+      if(tail[k].querySelector&&tail[k].querySelector(".g10v147-native-label"))continue;
+      var lab=document.createElement("div");lab.className="g10v147-native-label";lab.textContent=labels[k];
+      tail[k].insertBefore(lab,tail[k].firstChild);
+    }
   }
   function enhancePayments(){
     var root=document.getElementById("adminBody");if(!root||!window.st||!Array.isArray(st.subs))return;
@@ -78,7 +85,7 @@
   }
 
   var css=document.createElement("style");css.id="g10v147-row-style";
-  css.textContent=".g10v147-one-row{display:grid!important;grid-template-columns:minmax(235px,1.55fr) 118px 92px 92px 100px 138px 112px 112px 126px 142px 88px!important;gap:8px!important;align-items:center!important;padding:12px!important}.g10v147-one-row>.g10v147-grid-child{width:auto!important;max-width:none!important;margin:0!important}.g10v147-cell{min-width:0}.g10v147-cell label{display:block;font-size:9px;line-height:1.1;color:#5d7185;font-weight:850;margin-bottom:4px;white-space:normal}.g10v147-cell input,.g10v147-cell select{width:100%;min-width:0;box-sizing:border-box;border:1px solid #cbd8e4;border-radius:8px;padding:7px 6px;background:#fff;font-size:11px}.g10v147-display{height:31px;box-sizing:border-box;display:flex;align-items:center;padding:6px 7px;border-radius:8px;background:#f3f7fb;color:#153a66;font-weight:900;font-size:11px}.g10v147-family{font-size:7px;line-height:1.1;margin-top:3px;color:#8a6200}.g10v147-one-row select,.g10v147-one-row input{max-width:100%!important}.g10v147-one-row button{min-width:72px!important;max-width:88px!important;padding-left:8px!important;padding-right:8px!important}@media(max-width:1300px){.g10v147-one-row{grid-template-columns:minmax(200px,1.4fr) 108px 82px 82px 90px 128px 102px 100px 116px 132px 78px!important;gap:5px!important}}";
+  css.textContent=".g10v147-one-row{display:grid!important;grid-template-columns:minmax(220px,1.45fr) 112px 88px 88px 96px 132px 104px 106px 118px 132px 82px!important;gap:6px!important;align-items:end!important;padding:10px 12px!important}.g10v147-one-row>.g10v147-grid-child{width:auto!important;max-width:none!important;margin:0!important}.g10v147-cell{min-width:0}.g10v147-cell label,.g10v147-native-label{display:block;font-size:8px;line-height:1.1;color:#5d7185;font-weight:850;margin-bottom:4px;white-space:normal;min-height:18px}.g10v147-cell input,.g10v147-cell select,.g10v147-one-row>.g10v147-grid-child input,.g10v147-one-row>.g10v147-grid-child select{width:100%!important;min-width:0!important;box-sizing:border-box!important;border-radius:8px!important;padding:6px 6px!important;font-size:10px!important;min-height:34px!important}.g10v147-display{height:34px;box-sizing:border-box;display:flex;align-items:center;padding:6px 7px;border-radius:8px;background:#f3f7fb;color:#153a66;font-weight:900;font-size:10px}.g10v147-family{font-size:7px;line-height:1.05;margin-top:2px;color:#8a6200;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.g10v147-one-row button{min-width:68px!important;max-width:82px!important;padding:6px 8px!important;font-size:10px!important;min-height:34px!important}.g10v147-one-row>.g10v147-grid-child{align-self:end!important}@media(max-width:1300px){.g10v147-one-row{grid-template-columns:minmax(195px,1.35fr) 104px 82px 82px 88px 122px 96px 98px 110px 122px 76px!important;gap:4px!important}}";
   document.head.appendChild(css);
 
   function hook(){
