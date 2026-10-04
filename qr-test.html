@@ -87,6 +87,10 @@ async function processCode(raw){
   setResult("✅ "+x.name+" est enregistré(e) à bord • "+x.qrRef,"ok");
   if(navigator.vibrate)try{navigator.vibrate(120)}catch(e){}
 }
+function boardingTimeLabel(x){
+  const d=x&&x.lastQrBoardingAt?new Date(x.lastQrBoardingAt):new Date();
+  return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+}
 function showScanLanding(code){
   const x=state.subs.find(s=>String(s.qrRef||"").toUpperCase()===String(code||"").toUpperCase());
   const landing=document.getElementById("scanLanding");
@@ -98,10 +102,10 @@ function showScanLanding(code){
   document.getElementById("scanRef").textContent=x.qrRef;
   const btn=document.getElementById("scanValidate"),done=document.getElementById("scanDone");
   if(x.ride==="Monté"){
-    btn.style.display="none";done.classList.add("show");done.textContent="✅ Déjà à bord — montée déjà enregistrée.";
+    btn.style.display="none";done.classList.add("show");done.textContent="✅ À bord — ramassage confirmé • "+boardingTimeLabel(x);
   }else{
     btn.style.display="block";done.classList.remove("show");
-    btn.onclick=async()=>{btn.disabled=true;btn.textContent="Enregistrement…";await processCode(x.qrRef);btn.style.display="none";done.classList.add("show");done.textContent="✅ Montée enregistrée pour "+x.name+" à "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+".";};
+    btn.onclick=async()=>{btn.disabled=true;btn.textContent="Enregistrement…";await processCode(x.qrRef);btn.style.display="none";done.classList.add("show");done.textContent="✅ À bord — ramassage confirmé • "+boardingTimeLabel(x);};
   }
 }
 function manualScan(){processCode(document.getElementById("manual").value)}
