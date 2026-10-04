@@ -64,7 +64,7 @@ function showBadge(id){
   document.getElementById("modalTitle").textContent="Badge QR de "+x.name;
   document.getElementById("badgeHost").innerHTML='<div class="badge"><div class="badgeTop"><div class="logo"><span class="g">G</span>10 TRANSPORTS</div><div class="school">TRANSPORT SCOLAIRE • ZONE AKANDA</div></div><div class="badgeBody"><div><div class="kidname">'+escapeHtml(x.name)+'</div><div class="meta">'+escapeHtml(x.school||"")+'<br>'+escapeHtml(x.className||"")+'<br>Badge individuel G10</div></div><div id="qrbox" class="qrbox"></div></div><div class="qrlabel">'+x.qrRef+'</div></div>';
   document.getElementById("modal").classList.add("open");
-  setTimeout(()=>{new QRCode(document.getElementById("qrbox"),{text:x.qrRef,width:138,height:138,correctLevel:QRCode.CorrectLevel.H})},20);
+  setTimeout(()=>{new QRCode(document.getElementById("qrbox"),{text:location.origin+location.pathname+"?code="+encodeURIComponent(x.qrRef),width:138,height:138,correctLevel:QRCode.CorrectLevel.H})},20);
 }
 function closeBadge(){document.getElementById("modal").classList.remove("open")}
 function setResult(msg,kind){const el=document.getElementById("result");el.textContent=msg;el.className="result "+(kind||"")}
@@ -94,6 +94,7 @@ async function startScanner(){
   }catch(e){setResult("Autorise la caméra, ou utilise le test QR ci-dessus.","bad")}
 }
 async function init(){
+  const incomingCode=new URLSearchParams(location.search).get("code");
   try{
     document.getElementById("fb").textContent="Authentification…";
     await firebase.auth().signInAnonymously();
@@ -106,6 +107,10 @@ async function init(){
     document.getElementById("fb").textContent="Firebase : connecté";
     document.getElementById("fb").style.background="#e8f8ef";document.getElementById("fb").style.color="#087a43";
     demoRef.on("value",s=>{const p=s.val();if(p&&p.state){state=p.state;render()}});
+    if(incomingCode){
+      document.getElementById("manual").value=incomingCode;
+      await processCode(incomingCode);
+    }
   }catch(e){document.getElementById("fb").textContent="Firebase : erreur";setResult("Connexion impossible : "+(e&&e.message?e.message:e),"bad")}
 }
 init();
