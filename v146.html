@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>G10 Transport Scolaire V2 — V1.46 QR + arrivée école</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef4fb}
+#app{border:0;width:100%;height:100%;display:block}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:#eef4fb;color:#123d78;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-weight:900;z-index:5}
+</style>
+</head>
+<body>
+<div id="loading">Chargement G10 Transport Scolaire V1.46…</div>
+<iframe id="app" src="index.html?v=146"></iframe>
+<script>
+(function(){
+ var f=document.getElementById("app"),l=document.getElementById("loading");
+ f.addEventListener("load",function(){
+   try{
+     var d=f.contentDocument;
+     if(!d.getElementById("g10-v146-injected")){
+       var s=d.createElement("script");s.id="g10-v146-injected";s.src="g10-qr-school-v146.js?v=146";d.body.appendChild(s);
+     }
+     l.style.display="none";
+   }catch(e){l.textContent="Impossible de charger la V1.46 : "+e.message}
+ });
+})();
+</script>
+</body>
+</html>
