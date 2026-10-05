@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>G10 Transport Scolaire V1.45 — QR & arrivée école</title>
+<style>
+html,body{margin:0;height:100%;background:#eef4fb}#app{border:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body>
+<iframe id="app" src="index.html?v=144"></iframe>
+<script>
+(function(){
+  var f=document.getElementById('app');
+  f.addEventListener('load',function(){
+    var w=f.contentWindow,d=f.contentDocument;
+    if(!w||!d||!w.st||w.__g10qr145)return;
+    w.__g10qr145=true;
+    var css=d.createElement('style');
+    css.textContent='.g10-confirm-card{background:#fff;border:1px solid #dce6f0;border-radius:18px;overflow:hidden;margin:10px 0;box-shadow:0 10px 28px rgba(18,61,120,.08)}.g10-confirm-head{background:linear-gradient(135deg,#0b5fad,#123d78);color:#fff;padding:13px 15px;font-weight:950;font-size:14px}.g10-confirm-body{padding:14px 15px}.g10-confirm-name{font-size:16px;font-weight:950;color:#123d78}.g10-confirm-school{font-size:11px;color:#6b7f92;margin-top:3px}.g10-confirm-ok{margin-top:11px;background:#e8f8ef;color:#087a43;border:1px solid #bfe5ce;border-radius:12px;padding:11px 12px;font-weight:950;font-size:12px}.g10-qr-launch{background:#eef8ff;border:1px solid #cfe4f6;border-radius:14px;padding:12px;margin:0 0 10px}.g10-qr-launch b{display:block;color:#153a66;font-size:13px;margin-bottom:4px}.g10-qr-launch .small{margin-bottom:8px}';
+    d.head.appendChild(css);
+    function p(n){return String(n).padStart(3,'0')}
+    function refs(){var m=0;(w.st.subs||[]).forEach(function(x){var a=String(x.qrRef||'').match(/QR(\d+)$/i);if(a)m=Math.max(m,Number(a[1]))});(w.st.subs||[]).forEach(function(x){if(!x.qrRef){m++;x.qrRef='G10-TP-SCOL-QR'+p(m)}})}
+    function tf(iso){if(!iso)return'';var z=new Date(iso);return isNaN(z.getTime())?'':z.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+    function qcard(){return '<div class="g10-qr-launch"><b>Badge QR — montée des enfants</b><div class="small">Scanner le badge individuel pour identifier l’enfant et confirmer son ramassage.</div><button class="btn blue" onclick="window.location.href=\'qr-test.html?v=5\'">📷 Scanner un badge QR</button></div>'}
+    refs();
+    var os=w.save;w.save=function(){refs();return os.apply(w,arguments)};
+    var od=w.driverTab;w.driverTab=function(t){od.apply(w,arguments);if(t==='montees'){var b=d.getElementById('driverBody');if(b&&!b.querySelector('.g10-qr-launch'))b.insertAdjacentHTML('afterbegin',qcard())}};
+    var osc=w.school;w.school=function(s){var was=!!w.st.schools[s];osc.apply(w,arguments);if(!was&&w.st.schools[s]){var now=new Date().toISOString();(w.st.subs||[]).filter(function(x){return x.school===s&&x.ride==='Monté'}).forEach(function(x){x.schoolArrivalAt=now;x.schoolArrivalName=s;w.childEvent(x.id,'Arrivé à l’école — descente confirmée • '+tf(now))});w.save()}};
+    var opv=w.parentView;w.parentView=function(x){var h=opv.apply(w,arguments);if(!x)return h;var k='';if(x.lastQrBoardingAt)k+='<div class="g10-confirm-card"><div class="g10-confirm-head">G10 TRANSPORT SCOLAIRE</div><div class="g10-confirm-body"><div class="g10-confirm-name">'+x.name+'</div><div class="g10-confirm-school">'+(x.school||'')+'</div><div class="g10-confirm-ok">✅ À bord — ramassage confirmé • '+tf(x.lastQrBoardingAt)+'</div></div></div>';if(x.schoolArrivalAt)k+='<div class="g10-confirm-card"><div class="g10-confirm-head">G10 TRANSPORT SCOLAIRE</div><div class="g10-confirm-body"><div class="g10-confirm-name">'+x.name+'</div><div class="g10-confirm-school">'+(x.schoolArrivalName||x.school||'')+'</div><div class="g10-confirm-ok">✅ Arrivé à l’école — descente confirmée • '+tf(x.schoolArrivalAt)+'</div></div></div>';return k+h};
+    try{w.save()}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
