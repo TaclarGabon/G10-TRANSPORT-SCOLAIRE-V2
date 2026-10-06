@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>G10 Transport Scolaire V2 — V1.48 Journaux, historiques et rapports</title>
+<title>G10 Transport Scolaire V2 — V1.49 — V1.48 Journaux, historiques et rapports</title>
 <style>
 :root{--b:#123d78;--bg:#eef4fb;--line:#dce6f0;--green:#17a663;--red:#ef4750;--orange:#ff812d;--purple:#7a42e6;--yellow:#ffc83d;--blue:#1676f3}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#17324f}
@@ -1061,6 +1061,27 @@ button,input,select{font:inherit}.screen{display:none;padding:8px;max-width:1100
   padding:8px 10px;border-radius:9px;margin:7px 0;font-size:9px
 }
 
+
+/* ===== V1.49 — Astuce intelligente + Bonus intelligent ===== */
+.v149-smart-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0}
+.v149-smart-kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.v149-smart-kpi .k{font-size:9px;color:#65788b;font-weight:850}.v149-smart-kpi .v{font-size:20px;font-weight:950;color:#153a66;margin-top:4px}
+.v149-score{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}.v149-score .pill{border-radius:99px;padding:6px 10px;font-size:9px;font-weight:950}.v149-good{background:#e8f8ef;color:#08733a}.v149-warn{background:#fff4d9;color:#8a6500}.v149-bad{background:#ffe7e7;color:#a62626}.v149-info{background:#eaf4ff;color:#19598e}
+.v149-advice-list{display:flex;flex-direction:column;gap:8px}.v149-advice{display:grid;grid-template-columns:95px minmax(0,1fr);gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px}.v149-priority{font-size:9px;font-weight:950;text-transform:uppercase;letter-spacing:.3px}.v149-advice h4{margin:0 0 4px;color:#153a66}.v149-advice p{margin:0;font-size:10px;color:#425d75;line-height:1.45}
+.v149-note{padding:10px 12px;border:1px solid #cfe0f0;background:#f7fbff;border-radius:11px;color:#345b7d;font-size:9px;line-height:1.45;margin:9px 0}.v149-strategy{border-left:4px solid #e8b000;background:#fffaf0}
+.v149-bonus-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0}.v149-bonus-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.v149-bonus-card h4{margin:0 0 5px;color:#153a66}.v149-bonus-card p{margin:0;font-size:9px;color:#526a7d;line-height:1.45}
+.v149-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.v149-form label{font-size:9px;font-weight:850;color:#47627a}.v149-form input,.v149-form select,.v149-form textarea{width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:9px;background:#fff}.v149-form .wide{grid-column:1/-1}.v149-form textarea{min-height:72px;resize:vertical}
+.v149-analysis{margin-top:10px;padding:12px;border-radius:12px;border:1px solid #cde2d5;background:#f4fbf6}.v149-analysis h4{margin:0 0 6px;color:#11683c}.v149-history{display:flex;flex-direction:column;gap:7px;margin-top:10px}.v149-history-row{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:center}.v149-history-row .small{line-height:1.35}
+.v149-check-table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden}.v149-check-table th,.v149-check-table td{border-bottom:1px solid var(--line);padding:8px;text-align:left;font-size:9px}.v149-check-table th{background:#edf5fc;color:#153a66}
+@media(max-width:1000px){.v149-smart-grid,.v149-bonus-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.v149-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.v149-smart-grid,.v149-bonus-cards,.v149-form{grid-template-columns:1fr}.v149-advice{grid-template-columns:1fr}.v149-history-row{grid-template-columns:1fr}.v149-form .wide{grid-column:auto}}
+
+
+/* V1.51 — Réduction 10 % */
+.discount10-v151{display:flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid #c9d9ea;border-radius:9px;background:#f7fbff;font-size:10px;font-weight:800;white-space:nowrap}
+.discount10-v151 input{width:16px;height:16px;accent-color:#0b67c2}
+.discount10-v151 span{font-size:9px;font-weight:700;color:#198754;margin-left:3px}
+.pay-grid{grid-template-columns:minmax(260px,1.8fr) minmax(120px,.7fr) minmax(170px,.85fr) minmax(120px,.65fr) minmax(135px,.75fr) minmax(120px,.65fr)!important}
+@media(max-width:900px){.pay-grid{grid-template-columns:1fr!important}.discount10-v151{white-space:normal}}
 </style>
 
 <style id="v146-style">
@@ -2086,14 +2107,14 @@ function setAmountReceived(id,v){
   var x=st.subs.find(function(s){return String(s.id)===String(id)});if(!x)return;
   x.amountReceived=Math.max(0,Number(v)||0);
   if(x.amountReceived>0&&x.payment==='À vérifier')x.payment='Partiel';
-  if(Number(x.price)>0&&x.amountReceived>=Number(x.price)){x.payment='Payé';x.subscriptionStatus='Confirmé';x.activeTransport=true;if(!x.paymentDate)x.paymentDate=new Date().toISOString().slice(0,10)}
+  if(paymentDueV151(x)>0&&x.amountReceived>=paymentDueV151(x)){x.payment='Payé';x.subscriptionStatus='Confirmé';x.activeTransport=true;if(!x.paymentDate)x.paymentDate=new Date().toISOString().slice(0,10)}
   save();adminTab('paiements')
 }
 xpay=function(id,v){
   var x=st.subs.find(function(s){return String(s.id)===String(id)});if(!x)return;
   x.payment=v;
   if(v==='Payé'){
-    if(Number(x.price)>0&&!(Number(x.amountReceived)>0))x.amountReceived=Number(x.price);
+    if(paymentDueV151(x)>0&&!(Number(x.amountReceived)>0))x.amountReceived=paymentDueV151(x);
     if(!x.paymentDate)x.paymentDate=new Date().toISOString().slice(0,10);
     if(Number(x.price)>0){x.subscriptionStatus='Confirmé';x.activeTransport=true}
   }
@@ -2187,11 +2208,26 @@ masterTable=function(){
     '<td class="action"><button onclick="editSub(\''+x.id+'\')">Modifier</button></td></tr>'
   }).join('')+'</tbody></table></div><div id="editPanel"></div>'
 };
+/* V1.51 — restauration de la réduction 10 % dans Paiements */
+function paymentDiscountRateV151(x){return x&&x.discount10===true?0.10:0}
+function paymentDueV151(x){var base=Number(x&&x.price)||0;return Math.round(base*(1-paymentDiscountRateV151(x)))}
+function setDiscount10V151(id,on){
+  var x=st.subs.find(function(s){return String(s.id)===String(id)});if(!x)return;
+  x.discount10=!!on;
+  var due=paymentDueV151(x);
+  /* Si le paiement était déjà marqué Payé, le montant perçu suit le nouveau total dû. */
+  if(x.payment==='Payé')x.amountReceived=due;
+  save();
+  try{log(x.name+' : réduction 10 % '+(x.discount10?'appliquée':'retirée'))}catch(e){}
+  adminTab('paiements');
+}
+balanceAmount=function(x){return Math.max(0,paymentDueV151(x)-paidAmount(x))};
 function paymentAdminHtml(){
   return '<div class="pay-summary"><div class="card"><b>'+money(totalReceived())+'</b><span>Sommes déjà perçues</span></div><div class="card"><b>'+pendingPaymentCount()+'</b><span>Dossiers en attente de paiement</span></div><div class="card"><b>'+st.subs.filter(function(x){return x.subscriptionStatus==='Confirmé'}).length+'</b><span>Abonnements confirmés</span></div></div>'+
   '<div class="list">'+st.subs.map(function(x){
     return '<div class="card pay-grid"><div><b>'+x.name+'</b><div class="small">'+x.plan+' • '+(Number(x.price)>0?money(x.price):'Tarif à renseigner')+'<br><span class="sub-status '+subStatusClass(x)+'">'+x.subscriptionStatus+'</span></div></div>'+
     '<select onchange="xpay(\''+x.id+'\',this.value)"><option '+(x.payment==='À vérifier'?'selected':'')+'>À vérifier</option><option '+(x.payment==='Partiel'?'selected':'')+'>Partiel</option><option '+(x.payment==='Payé'?'selected':'')+'>Payé</option><option '+(x.payment==='Non payé'?'selected':'')+'>Non payé</option></select>'+
+    '<label class="discount10-v151"><input type="checkbox" '+(x.discount10===true?'checked':'')+' onchange="setDiscount10V151(\''+x.id+'\',this.checked)"> Réduction 10 %<span>'+money(paymentDueV151(x))+' dû</span></label>'+
     '<input type="number" min="0" step="1000" value="'+paidAmount(x)+'" onchange="setAmountReceived(\''+x.id+'\',this.value)" title="Somme perçue">'+
     '<input type="date" value="'+(x.paymentDate||'')+'" onchange="setPaymentDate(\''+x.id+'\',this.value)">'+
     '<div><b>'+money(balanceAmount(x))+'</b><div class="small">Solde restant</div></div></div>'
@@ -5427,6 +5463,97 @@ var _v148RenderBase=render;
 render=function(id){ensureDailyResetV146();ensureGestionJournalV148();normalizeDirectionHistoryV148();if(id==='gestion'){document.getElementById(id).innerHTML=spaceTitlebar('gestion')+topbar('gestion',[["suivi","Suivi"],["abonnes","Abonnés"],["paiements","Paiements"],["circuit","Circuit"],["rapports","Rapports"],["historique","Historique"],["staff","Staff"],["depenses","Dépenses"]])+'<div id="gestionBody"></div>';gestionTab(currentTabs.gestion);return}if(id==='direction'){var n=unreadDirectionCount(),dashLabel='Tableau de bord'+(n?'<span class="dir-tab-badge">'+n+'</span>':'');document.getElementById(id).innerHTML=spaceTitlebar('direction')+topbar('direction',[["dashboard",dashLabel],["abonnes","Abonnés"],["paiements","Paiements"],["bus","Bus & chauffeur"],["rapports","Rapports"],["historique","Historique"],["staff","Staff"],["depenses","Dépenses"]])+'<div id="directionBody"></div>';directionTab(currentTabs.direction);return}_v148RenderBase(id)};
 
 ensureGestionJournalV148();normalizeDirectionHistoryV148();
+
+
+/* ===== V1.49 — Astuce intelligente + Bonus intelligent ===== */
+function smartSnapshotV149(){
+  ensureDailyResetV146();
+  var subs=st.subs||[],exps=st.vehicleExpenses||[],today=localDateKeyV146();
+  var confirmed=subs.filter(function(x){return activeConfirmedV146(x)});
+  var received=subs.reduce(function(a,x){return a+Number(paidAmountFor(x)||0)},0);
+  var potential=confirmed.reduce(function(a,x){return a+Number(x.price||0)},0);
+  var validated=exps.filter(function(e){return e.status==='Validé'}),pendingExp=exps.filter(function(e){return e.status==='À vérifier'});
+  var expense=validated.reduce(function(a,e){return a+Number(e.amount||0)},0);
+  var unpaid=subs.filter(function(x){return Number(paidAmountFor(x)||0)<=0 || x.payment==='Non payé' || x.subscriptionStatus!=='Confirmé'}).length;
+  var missingInvoice=validated.filter(function(e){return !String(e.invoiceNumber||'').trim() || !String(e.invoiceDate||'').trim()}).length;
+  var partial=confirmed.filter(function(x){return x.plan==='Partiel'}).length;
+  var journeys=(st.qrJourneys&&st.qrJourneys[today])||{},morning=0,back=0;
+  Object.keys(journeys).forEach(function(k){if(journeys[k]&&journeys[k].morning)morning++;if(journeys[k]&&journeys[k].returnTrip)back++});
+  return {subs:subs.length,confirmed:confirmed.length,received:received,potential:potential,expense:expense,balance:received-expense,unpaid:unpaid,pendingExp:pendingExp.length,missingInvoice:missingInvoice,partial:partial,qrMorning:morning,qrReturn:back,today:today}
+}
+function smartPriorityV149(kind){return kind==='bad'?'<span class="pill v149-bad">Prioritaire</span>':kind==='warn'?'<span class="pill v149-warn">À améliorer</span>':kind==='good'?'<span class="pill v149-good">Bon signal</span>':'<span class="pill v149-info">À suivre</span>'}
+function smartAdviceV149(){
+  var s=smartSnapshotV149(),a=[];
+  if(s.unpaid>0)a.push({p:'bad',t:'Relancer les dossiers non encaissés',d:s.unpaid+' dossier(s) n’ont pas encore un encaissement complet/confirmé. Commencer par les familles déjà enregistrées coûte moins cher que chercher uniquement de nouveaux clients.'});
+  if(s.pendingExp>0)a.push({p:'warn',t:'Valider les dépenses en attente',d:s.pendingExp+' dépense(s) sont encore « À vérifier ». Les valider avec justificatif améliorera la fiabilité du rapport opérationnel.'});
+  if(s.missingInvoice>0)a.push({p:'warn',t:'Compléter les justificatifs',d:s.missingInvoice+' dépense(s) validée(s) n’ont pas encore numéro et/ou date de facture. Les compléter avant l’export mensuel.'});
+  if(s.confirmed>0 && s.qrMorning<s.confirmed)a.push({p:'info',t:'Poursuivre le test QR',d:s.qrMorning+' scan(s) matin enregistré(s) aujourd’hui pour '+s.confirmed+' abonnement(s) actif(s). Continuer le test sans rendre le QR bloquant : le pointage manuel reste le secours.'});
+  if(s.potential>0 && s.received<s.potential)a.push({p:'warn',t:'Réduire l’écart entre potentiel et encaissements',d:'Potentiel indicatif des abonnements confirmés : '+money(s.potential)+'. Sommes actuellement enregistrées comme perçues : '+money(s.received)+'. Vérifier les échéances et paiements partiels.'});
+  if(s.confirmed<8)a.push({p:'info',t:'Remplir les circuits existants avant d’augmenter les moyens',d:'Le nombre actuel d’abonnements actifs reste limité. Prioriser les élèves situés sur les trajets déjà desservis peut augmenter les recettes sans ajouter immédiatement un véhicule.'});
+  if(s.partial>0)a.push({p:'good',t:'Exploiter les forfaits partiels',d:s.partial+' abonnement(s) partiel(s) actif(s). Suivre séparément Matin/Soir permet de vendre les places disponibles sur l’autre sens sans désorganiser le circuit.'});
+  if(!a.length)a.push({p:'good',t:'Situation opérationnelle stable sur les contrôles disponibles',d:'Aucune alerte simple n’est déclenchée par les données actuellement enregistrées. Continuer à renseigner paiements, dépenses, QR et justificatifs pour affiner l’analyse.'});
+  return a
+}
+function smartAdviceHtmlV149(role){
+  var s=smartSnapshotV149(),adv=smartAdviceV149();
+  return '<div class="v149-note"><b>Astuce intelligente :</b> analyse locale basée uniquement sur les données opérationnelles présentes dans G10 Transport Scolaire.</div>'+ 
+  '<div class="v149-smart-grid"><div class="v149-smart-kpi"><div class="k">Abonnements actifs</div><div class="v">'+s.confirmed+'</div></div><div class="v149-smart-kpi"><div class="k">Encaissements enregistrés</div><div class="v">'+money(s.received)+'</div></div><div class="v149-smart-kpi"><div class="k">Dépenses transport validées</div><div class="v">'+money(s.expense)+'</div></div><div class="v149-smart-kpi"><div class="k">Écart opérationnel indicatif</div><div class="v">'+money(s.balance)+'</div></div></div>'+ 
+  '<div class="v149-score">'+smartPriorityV149(s.unpaid>0?'bad':'good')+'<span class="small">'+s.unpaid+' dossier(s) à encaisser/clarifier • '+s.pendingExp+' dépense(s) à vérifier • QR matin aujourd’hui : '+s.qrMorning+' / '+s.confirmed+'</span></div>'+ 
+  '<div class="v149-advice-list">'+adv.map(function(x){return '<div class="v149-advice"><div class="v149-priority">'+smartPriorityV149(x.p)+'</div><div><h4>'+escV146(x.t)+'</h4><p>'+escV146(x.d)+'</p></div></div>'}).join('')+'</div>'+ 
+  (role==='direction'?'<div class="v149-note" style="margin-top:12px"><b>Lecture Direction :</b> utiliser ces recommandations comme points de contrôle. Les décisions de prix, embauche, investissement ou recapitalisation doivent rester validées par les responsables compétents.</div>':'<div class="v149-note" style="margin-top:12px"><b>Lecture '+(role==='admin'?'Administration':'Gestion')+' :</b> cette vue est en lecture opérationnelle. Les arbitrages stratégiques sont centralisés dans Direction → Bonus intelligent.</div>')
+}
+
+function ensureBonusV149(){st.smartBonusV149=Array.isArray(st.smartBonusV149)?st.smartBonusV149:[]}
+ensureBonusV149();
+function bonusProposalCardsV149(){
+  var s=smartSnapshotV149();
+  var cards=[
+    ['Remplir les places sur les circuits actuels','Cibler les familles situées sur les axes déjà parcourus. Objectif : augmenter les recettes avec peu de kilomètres supplémentaires.'],
+    ['Partenariats avec les écoles','Présenter une offre simple aux établissements déjà desservis : transport régulier, point relais, suivi QR et rapport aux parents.'],
+    ['Parrainage parents / fratries','Tester une campagne de recommandation limitée dans le temps. Mesurer contacts, inscriptions obtenues et coût réel de l’avantage accordé.'],
+    ['Pré-paiement trimestriel','Tester auprès de familles volontaires une formule payée d’avance, sans réduire la marge à l’aveugle. Mesurer la trésorerie réellement générée.'],
+    ['Convertir les dossiers déjà présents','Priorité aux '+s.unpaid+' dossier(s) non encaissé(s)/non finalisé(s) : ils sont déjà dans la base et peuvent être plus faciles à convertir qu’un prospect froid.'],
+    ['Valoriser les heures creuses','Étudier uniquement les usages compatibles avec les véhicules, assurances et autorisations : transport contractuel complémentaire, écoles/entreprises ou navettes ponctuelles.']
+  ];
+  return '<div class="v149-bonus-cards">'+cards.map(function(c){return '<div class="v149-bonus-card"><h4>'+escV146(c[0])+'</h4><p>'+escV146(c[1])+'</p></div>'}).join('')+'</div>'
+}
+function bonusContextV149(){return '<div class="v149-note"><b>Bonus intelligent :</b> ce module concerne uniquement le développement de G10 Transport Scolaire à partir de ses propres moyens, essais et résultats. Les informations des autres structures du groupe ne sont ni affichées ni intégrées aux calculs.</div>'}
+function bonusFormV149(){return '<div class="card"><h3 style="margin-top:0;color:#153a66">Tester une action de développement</h3><div class="small" style="margin-bottom:9px">Renseigner les résultats réels d’une action puis cliquer sur Analyser. L’analyse reste un indicateur de pilotage, pas une promesse de rentabilité.</div><div class="v149-form"><label>Action testée<select id="v149BonusAction"><option>Remplir les circuits existants</option><option>Partenariat école</option><option>Parrainage / fratrie</option><option>Pré-paiement</option><option>Conversion dossiers existants</option><option>Autre action</option></select></label><label>Date début<input id="v149BonusFrom" type="date" value="'+localDateKeyV146()+'"></label><label>Contacts / actions réalisés<input id="v149BonusContacts" type="number" min="0" value="0"></label><label>Intéressés<input id="v149BonusInterested" type="number" min="0" value="0"></label><label>Nouveaux abonnés / contrats<input id="v149BonusWins" type="number" min="0" value="0"></label><label>Recettes générées FCFA<input id="v149BonusRevenue" type="number" min="0" value="0"></label><label>Dépenses engagées FCFA<input id="v149BonusCost" type="number" min="0" value="0"></label><label class="wide">Observation<textarea id="v149BonusNote" placeholder="Ce qui a été essayé, difficultés, retour des parents/écoles…"></textarea></label></div><button class="btn green" style="margin-top:10px" onclick="analyseBonusV149()">Analyser les résultats</button><div id="v149BonusResult"></div></div>'}
+function analyseBonusV149(){
+  ensureBonusV149();var action=(document.getElementById('v149BonusAction')||{}).value||'Action',from=(document.getElementById('v149BonusFrom')||{}).value||localDateKeyV146(),contacts=Number((document.getElementById('v149BonusContacts')||{}).value||0),interested=Number((document.getElementById('v149BonusInterested')||{}).value||0),wins=Number((document.getElementById('v149BonusWins')||{}).value||0),revenue=Number((document.getElementById('v149BonusRevenue')||{}).value||0),cost=Number((document.getElementById('v149BonusCost')||{}).value||0),note=((document.getElementById('v149BonusNote')||{}).value||'').trim(),net=revenue-cost,conv=contacts>0?wins/contacts:0;
+  var verdict='Test à poursuivre avec davantage de données.',next='Définir un objectif chiffré avant la prochaine tentative et renseigner systématiquement le résultat.';
+  if(wins>0&&net>0){verdict='Action positive sur ce test : '+wins+' nouveau(x) client(s)/contrat(s) et un solde direct de '+money(net)+'.';next=conv>=0.15?'Le taux de conversion est encourageant. Répéter sur un groupe comparable avant d’augmenter les dépenses.':'Le test génère des recettes, mais le taux de conversion reste à améliorer. Affiner la cible avant d’élargir.'}
+  else if(revenue>0&&net<=0){verdict='L’action a généré des recettes mais les dépenses engagées absorbent le résultat direct.';next='Réduire le coût d’acquisition ou tester une variante moins coûteuse avant de généraliser.'}
+  else if(contacts>0&&wins===0){verdict='Aucune conversion enregistrée sur '+contacts+' contact(s)/action(s).';next=interested>0?'Il y a de l’intérêt mais pas encore de conversion. Identifier l’obstacle principal : prix, trajet, horaires, confiance ou délai de décision.':'Revoir la cible et le message avant de répéter le même effort.'}
+  var item={id:'BI-'+Date.now(),createdAt:new Date().toISOString(),action:action,from:from,contacts:contacts,interested:interested,wins:wins,revenue:revenue,cost:cost,net:net,conversion:conv,note:note,verdict:verdict,next:next};st.smartBonusV149.unshift(item);save();var h=document.getElementById('v149BonusResult');if(h)h.innerHTML='<div class="v149-analysis"><h4>Analyse du test</h4><div>'+escV146(verdict)+'</div><div style="margin-top:6px"><b>Prochaine étape :</b> '+escV146(next)+'</div><div class="small" style="margin-top:6px">Conversion : '+Math.round(conv*100)+' % • Recettes : '+money(revenue)+' • Dépenses : '+money(cost)+' • Solde direct : '+money(net)+'</div></div>';setTimeout(function(){directionTab('bonus')},300)
+}
+function removeBonusHistoryV149(id){if(!confirm('Retirer ce test du journal Bonus intelligent ? Cela ne modifie aucun paiement ni rapport opérationnel G10.'))return;st.smartBonusV149=(st.smartBonusV149||[]).filter(function(x){return x.id!==id});save();directionTab('bonus')}
+function bonusHistoryV149(){ensureBonusV149();var arr=st.smartBonusV149||[];return '<div class="card"><h3 style="margin-top:0;color:#153a66">Historique des tests</h3>'+(arr.length?'<div class="v149-history">'+arr.map(function(x){return '<div class="v149-history-row"><div><b>'+escV146(x.from||dateKeyFromIsoV148(x.createdAt))+'</b><div class="small">'+timeFromIsoV148(x.createdAt)+'</div></div><div><b>'+escV146(x.action)+'</b><div class="small">'+x.contacts+' actions • '+x.wins+' conversion(s) • '+money(x.revenue)+' recettes • '+money(x.cost)+' dépenses • solde '+money(x.net)+'</div><div class="small" style="margin-top:3px">'+escV146(x.verdict||'')+'</div></div><button class="btn light" onclick="removeBonusHistoryV149(&quot;'+x.id+'&quot;)">Retirer</button></div>'}).join('')+'</div>':'<div class="v148-empty">Aucun test enregistré pour le moment.</div>')+'</div>'}
+function bonusIntelligentHtmlV149(){return bonusContextV149()+'<h3 style="color:#153a66;margin:14px 0 6px">Pistes à tester avec peu de moyens</h3>'+bonusProposalCardsV149()+bonusFormV149()+bonusHistoryV149()}
+
+var _v149DirectionTabBase=directionTab;
+directionTab=function(t){currentTabs.direction=t;updateSpaceTitle('direction',t);if(t==='astuce'){var b=document.getElementById('directionBody');if(b)b.innerHTML=sectionHeader('Direction','Astuce intelligente','Analyse des données opérationnelles déjà présentes dans G10 et propositions d’amélioration.')+smartAdviceHtmlV149('direction');return}if(t==='bonus'){var c=document.getElementById('directionBody');if(c)c.innerHTML=sectionHeader('Direction','Bonus intelligent','Tester des pistes de développement, saisir les résultats et analyser les essais.')+bonusIntelligentHtmlV149();return}_v149DirectionTabBase(t)};
+var _v149AdminTabBase=adminTab;
+adminTab=function(t){currentTabs.admin=t;updateSpaceTitle('admin',t);if(t==='astuce'){var b=document.getElementById('adminBody');if(b)b.innerHTML=sectionHeader('Administration','Astuce intelligente','Lecture des points d’amélioration détectés à partir des données opérationnelles.')+smartAdviceHtmlV149('admin');return}_v149AdminTabBase(t)};
+var _v149GestionTabBase=gestionTab;
+gestionTab=function(t){currentTabs.gestion=t;updateSpaceTitle('gestion',t);if(t==='astuce'){var b=document.getElementById('gestionBody');if(b)b.innerHTML=sectionHeader('Gestion','Astuce intelligente','Lecture des points d’amélioration détectés à partir des données opérationnelles.')+smartAdviceHtmlV149('gestion');return}_v149GestionTabBase(t)};
+
+var _v149RenderBase=render;
+render=function(id){
+  ensureDailyResetV146();ensureGestionJournalV148();normalizeDirectionHistoryV148();
+  if(id==='admin'){
+    document.getElementById(id).innerHTML=spaceTitlebar('admin')+topbar('admin',[["abonnes","Abonnés"],["paiements","Paiements"],["circuit","Circuit"],["rapports","Rapports"],["chauffeurs","Chauffeurs"],["staff","Staff"],["depenses","Dépenses"],["qrall","Voir tous les QR codes"],["astuce","Astuce intelligente"]])+'<div id="adminBody"></div>';adminTab(currentTabs.admin);return
+  }
+  if(id==='gestion'){
+    document.getElementById(id).innerHTML=spaceTitlebar('gestion')+topbar('gestion',[["suivi","Suivi"],["abonnes","Abonnés"],["paiements","Paiements"],["circuit","Circuit"],["rapports","Rapports"],["historique","Historique"],["staff","Staff"],["depenses","Dépenses"],["astuce","Astuce intelligente"]])+'<div id="gestionBody"></div>';gestionTab(currentTabs.gestion);return
+  }
+  if(id==='direction'){
+    var n=unreadDirectionCount(),dashLabel='Tableau de bord'+(n?'<span class="dir-tab-badge">'+n+'</span>':'');
+    document.getElementById(id).innerHTML=spaceTitlebar('direction')+topbar('direction',[["dashboard",dashLabel],["abonnes","Abonnés"],["paiements","Paiements"],["bus","Bus & chauffeur"],["rapports","Rapports"],["historique","Historique"],["staff","Staff"],["depenses","Dépenses"],["astuce","Astuce intelligente"],["bonus","Bonus intelligent"]])+'<div id="directionBody"></div>';directionTab(currentTabs.direction);return
+  }
+  _v149RenderBase(id)
+};
+ensureBonusV149();
 
 
 save();
