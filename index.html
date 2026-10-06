@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>G10 Transport Scolaire V2 — V1.46 QR Badges & Archives</title>
+<title>G10 Transport Scolaire V2 — V1.47 QR dans le tableau</title>
 <style>
 :root{--b:#123d78;--bg:#eef4fb;--line:#dce6f0;--green:#17a663;--red:#ef4750;--orange:#ff812d;--purple:#7a42e6;--yellow:#ffc83d;--blue:#1676f3}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#17324f}
@@ -5212,6 +5212,94 @@ render=function(id){ensureDailyResetV146();_v146Render(id)};
 
 /* État initial / migration. */
 ensureQRRefsV146();ensureDailyResetV146();
+
+
+/* ===== V1.47 — QR remis dans le tableau + onglet Tous les QR ===== */
+(function(){
+  var sty=document.createElement('style');
+  sty.id='v147-style';
+  sty.textContent=`
+    .v147-qr-col{min-width:108px;text-align:center;vertical-align:middle}
+    .v147-qr-btn{white-space:nowrap;padding:7px 9px!important;font-size:9px!important}
+    .v147-qr-wait{display:inline-block;max-width:92px;color:#7d8c99;font-size:8px;line-height:1.25;text-align:center}
+    .v147-allqr-note{margin:0 0 10px;padding:9px 11px;border:1px solid #cfe0f0;background:#f5faff;border-radius:10px;color:#315f89;font-size:9px}
+  `;
+  document.head.appendChild(sty)
+})();
+
+/* Dans le tableau, le QR reste une colonne compacte. */
+masterTable=function(){
+  ensureQRRefsV146();
+  return '<div class="table-note"><b>Tableau Martina mis à jour.</b> Tarif : choisir 50 000, 55 000, 60 000… jusqu’à 120 000 FCFA, ou sélectionner « Autre montant… » pour saisir un montant libre. Le statut d’abonnement se modifie également dans le tableau. <b>Les paiements réels confirmés par Martina ont été intégrés ci-dessous.</b></div>'+ 
+  '<div class="master-wrap"><table class="master"><thead><tr><th>#</th><th>Enfant</th><th>École / classe</th><th>Parent</th><th>Contacts</th><th>Commune / quartier</th><th>Adresse / repère</th><th>Formule</th><th>Tarif</th><th>QR Code</th><th>Ramassage matin</th><th>Retour école</th><th>Dépose soir</th><th>Horaires</th><th>Urgence</th><th>Abonnement</th><th>État dossier</th><th>Action</th></tr></thead><tbody>'+ 
+  st.subs.map(function(x,i){
+    function td(v,p){return '<td class="'+(p?'pending-cell':'')+'">'+(v||'')+'</td>'}
+    var qrcell=x.qrRef
+      ? '<button class="btn blue v147-qr-btn" onclick="showBadgeV147(&quot;'+x.id+'&quot;)">Voir QR Code</button>'
+      : '<span class="v147-qr-wait">QR après confirmation</span>';
+    return '<tr><td>'+(i+1)+'</td>'+td(x.name)+td(x.school+' / '+(x.className||''))+td(x.guardian)+
+    td('WhatsApp : '+(x.whatsapp||'')+'<br>Tél. 2 : '+(x.phone2||'')+'<br>Email : '+(x.email||''))+
+    td((x.commune||'')+'<br>'+(x.district||''),/confirmer|À confirmer/i.test((x.commune||'')+' '+(x.district||'')))+
+    td(x.address,/confirmer|À confirmer/i.test(x.address||''))+
+    '<td><select class="select-compact" onchange="setFormula(\''+x.id+'\',this.value)"><option value="Standard" '+(x.plan==='Standard'?'selected':'')+'>Standard / Relais</option><option value="VIP" '+(x.plan==='VIP'?'selected':'')+'>VIP / Domicile</option><option value="Partiel" '+(x.plan==='Partiel'?'selected':'')+'>Partiel'+(x.plan==='Partiel'&&x.partialService?' — '+x.partialService:'')+'</option></select></td>'+ 
+    '<td>'+tariffCell(x)+'</td><td class="v147-qr-col">'+qrcell+'</td>'+ 
+    td(x.pickup)+td(x.returnPickup)+
+    '<td><select class="select-compact" onchange="setDrop(\''+x.id+'\',this.value)"><option value="Domicile" '+(x.dropType==='Domicile'?'selected':'')+'>Domicile / Au domicile</option><option value="Relais" '+(x.dropType==='Relais'?'selected':'')+'>Relais / Point de relais</option></select></td>'+ 
+    td('Entrée : '+(x.entry||'')+'<br>Sortie : '+(x.exit||''),/confirmer|compléter/i.test((x.entry||'')+' '+(x.exit||'')))+
+    td((x.emergency||'')+'<br>'+(x.emergencyPhone||''),/confirmer|\?/i.test((x.emergency||'')+' '+(x.emergencyPhone||'')))+
+    '<td>'+subscriptionStatusSelect(x)+'</td>'+td(x.pending?x.pending+' champ(s) à corriger':'Validé')+
+    '<td class="action"><button onclick="editSub(\''+x.id+'\')">Modifier</button></td></tr>'
+  }).join('')+'</tbody></table></div><div id="editPanel"></div>'
+};
+
+/* Le QR individuel n'affiche que les deux choix demandés : imprimer/PDF ou enregistrer. */
+function showBadgeV147(id){
+  ensureQRRefsV146();
+  var x=(st.subs||[]).find(function(s){return String(s.id)===String(id)});if(!x||!x.qrRef)return;
+  var old=document.getElementById('v146BadgeModal');if(old)old.remove();
+  var d=document.createElement('div');d.id='v146BadgeModal';d.className='v146-badge-modal';
+  d.innerHTML='<div class="v146-badge-modal-card"><div class="v146-badge-modal-head"><div><h3>QR Code — '+escV146(badgeNameV146(x))+'</h3><div class="small">Badge G10 Transports • format 54 × 85 mm</div></div><button class="btn light" onclick="closeBadgeV146()">Fermer</button></div>'+badgeShellV146(x)+'<div class="v146-badge-actions"><button class="btn green" onclick="printBadgeV146(&quot;'+x.id+'&quot;)">Imprimer / PDF</button><button class="btn blue" onclick="saveQRV146(&quot;'+x.id+'&quot;)">Enregistrer</button></div></div>';
+  document.body.appendChild(d)
+}
+
+/* Page dédiée à la planche de tous les QR, sans encombrer le tableau Abonnés. */
+function allQRPageV147(){
+  return '<div class="v147-allqr-note"><b>Impression groupée :</b> les badges actifs sont préparés au format 54 × 85 mm avec repères de découpe. Si une feuille A4 ne suffit pas, les pages suivantes sont créées automatiquement.</div>'+qrAdminPanelV146()
+}
+
+/* Une photo ajoutée depuis l'onglet QR doit rester dans cet onglet. */
+setChildPhotoV146=function(id,input){
+  var x=(st.subs||[]).find(function(s){return String(s.id)===String(id)});if(!x)return;
+  var f=input&&input.files&&input.files[0];compressChildPhotoV146(f,function(data){if(data){x.photoV146=data;save();adminTab(currentTabs.admin==='qr'?'qr':'abonnes')}})
+};
+
+/* Supprime l'ancien gros panneau QR injecté au-dessus du tableau. */
+var _v147AdminBase=_v146AdminTab;
+adminTab=function(t){
+  currentTabs.admin=t;updateSpaceTitle('admin',t);
+  if(t==='qr'){
+    var b=document.getElementById('adminBody');
+    if(b)b.innerHTML=sectionHeader('Administration','Voir tous les QR codes','Préparer, vérifier et imprimer en une fois les badges QR des abonnés actifs.')+allQRPageV147();
+    return
+  }
+  _v147AdminBase(t)
+};
+
+/* Ajoute l'onglet dédié tout au bout, après Dépenses. */
+var _v147RenderBase=render;
+render=function(id){
+  ensureDailyResetV146();
+  if(id==='admin'){
+    var pc=pendingExpenseCount();
+    var depLabel='Dépenses'+(pc?'<span class="admin-expense-badge">'+pc+'</span>':'');
+    document.getElementById(id).innerHTML=spaceTitlebar('admin')+topbar('admin',[
+      ['abonnes','Abonnés'],['paiements','Paiements'],['circuit','Circuit'],['rapports','Rapports'],['chauffeurs','Chauffeurs'],['staff','Staff'],['depenses',depLabel],['qr','Voir tous les QR codes']
+    ])+'<div id="adminBody"></div>';
+    adminTab(currentTabs.admin==='personnel'?'staff':currentTabs.admin);
+    return
+  }
+  _v147RenderBase(id)
+};
 
 
 save();
