@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object index.html)" = "4cda512106c34282148067c1b2ed2b0cc13d7c55"
+          test "$(git hash-object index.html)" = "e2f4b5af3039d86c3827a239c389f14c330d0aae"
 
       - name: Apply V1.60 loader
         shell: python
@@ -32,23 +32,24 @@ jobs:
           path = Path("index.html")
           text = path.read_text(encoding="utf-8")
 
-          old_title = "<title>G10 Transport Scolaire V2 — Version intégrée — V1.49 — V1.48 Journaux, historiques et rapports</title>"
           new_title = "<title>G10 Transport Scolaire V2 — V1.60 — Akanda & Inter-Akanda</title>"
-          marker = '<script src="v160.js"></script>'
+          loader = '\n<link rel="stylesheet" href="v160.css">\n<script src="v160.js"></script>\n'
+          end_tag = "</body></html>"
 
-          if marker in text:
-              print("V1.60 déjà activée.")
-          else:
-              if text.count(old_title) != 1:
-                  raise SystemExit("Titre V1.59.1 attendu introuvable ou ambigu.")
-              end_tag = "</body></html>"
-              end_pos = text.rfind(end_tag)
-              if end_pos < 0:
-                  raise SystemExit("Balise de fin HTML introuvable.")
-              text = text.replace(old_title, new_title, 1)
-              loader = '\n<link rel="stylesheet" href="v160.css">\n<script src="v160.js"></script>\n'
-              text = text[:end_pos] + loader + text[end_pos:]
-              path.write_text(text, encoding="utf-8")
+          if new_title not in text:
+              raise SystemExit("Titre V1.60 introuvable.")
+
+          # Le premier passage a chargé les fichiers après </html>.
+          # On retire ce chargeur puis on le replace juste avant la dernière fermeture HTML.
+          if loader in text:
+              text = text.replace(loader, "", 1)
+
+          end_pos = text.rfind(end_tag)
+          if end_pos < 0:
+              raise SystemExit("Balise de fin HTML introuvable.")
+
+          text = text[:end_pos] + loader + text[end_pos:]
+          path.write_text(text, encoding="utf-8")
 
       - name: Validate V1.60 JavaScript
         shell: bash
