@@ -1,0 +1,24 @@
+/* ===== V1.60 — Bus 1 / Bus 2, Inter-Akanda et analyse par zone ===== */
+.v160-bus-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 12px;padding:10px;border:1px solid #d8e4ee;border-radius:12px;background:#fff}
+.v160-bus-toolbar .v160-bus-btn{border:1px solid #bfd0e3;background:#f7fbff;color:#153a66;border-radius:999px;padding:8px 12px;font-weight:800;cursor:pointer}
+.v160-bus-toolbar .v160-bus-btn.active{background:#153a66;color:#fff;border-color:#153a66}
+.v160-bus-toolbar .v160-bus-note{font-size:10px;color:#60758d;font-weight:700;flex:1 1 280px}
+.v160-zone-pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900;background:#e8f3ff;color:#14569c;white-space:nowrap}
+.v160-zone-pill.inter{background:#e8f8ef;color:#147344}
+.v160-bus-select{min-width:145px;max-width:180px}
+.v160-bus-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 12px}
+.v160-bus-card{border:1px solid #d8e4ee;border-radius:14px;background:#fff;padding:13px}
+.v160-bus-card h3{margin:0 0 4px;color:#153a66;font-size:15px}
+.v160-bus-card .v160-line{font-size:10px;color:#536a82;margin-top:5px}
+.v160-bus-card .v160-line b{color:#233f5d}
+.v160-school-list{margin-top:8px;font-size:9px;color:#536a82;line-height:1.5}
+.v160-analysis{margin:10px 0 14px}
+.v160-analysis-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.v160-analysis-head h3{margin:0;color:#153a66}
+.v160-analysis-note{font-size:9px;color:#60758d;max-width:620px;line-height:1.45}
+.v160-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 12px}
+.v160-kpi{border:1px solid #dbe6f1;border-radius:12px;background:#f9fbfd;padding:10px}
+.v160-kpi b{display:block;color:#153a66;font-size:16px}.v160-kpi span{font-size:8.5px;color:#687c91;font-weight:800}
+.v160-analysis-table{width:100%;border-collapse:collapse;font-size:9px}.v160-analysis-table th,.v160-analysis-table td{border-bottom:1px solid #e5edf5;padding:8px;text-align:left}.v160-analysis-table th{color:#153a66;background:#f7fbff}.v160-analysis-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.v160-standard-note{margin-top:7px;padding:8px 10px;border-radius:10px;background:#eef9f3;border:1px solid #b7dfc7;color:#16663c;font-size:9px;font-weight:800}
+@media(max-width:760px){.v160-bus-grid{grid-template-columns:1fr}.v160-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.v160-analysis-table{min-width:680px}.v160-analysis-scroll{overflow-x:auto}}
