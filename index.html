@@ -5760,8 +5760,8 @@ ensureFeedbackV152();save();
  const baseMaster=window.masterTable;
  window.masterTable=function(){
    let html=baseMaster();
-   html=html.replace(/<th>Action<\/th>/,'<th>Action</th><th>Nettoyer</th>');
-   html=html.replace(/(<td class="action"><div class="loc-cell"><button onclick="editSub\('([^']+)'\)">Modifier<\/button>[\s\S]*?<\/div><\/td>)(<\/tr>)/g,(all,cell,id,end)=>cell+'<td class="action"><button type="button" class="btn light" onclick="nettoyerLigneG10('+JSON.stringify(id)+')">Nettoyer</button></td>'+end);
+   /* V1.59.1 : colonne Nettoyer générée uniquement par g10CleanRow ci-dessous */
+
    return html;
  };
  window.nettoyerLigneG10=function(id){
