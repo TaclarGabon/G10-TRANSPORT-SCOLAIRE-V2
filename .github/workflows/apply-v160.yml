@@ -1,0 +1,72 @@
+name: Apply V1.60
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-v160.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify V1.59.1 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object index.html)" = "4cda512106c34282148067c1b2ed2b0cc13d7c55"
+
+      - name: Apply V1.60 loader
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("index.html")
+          text = path.read_text(encoding="utf-8")
+
+          old_title = "<title>G10 Transport Scolaire V2 — Version intégrée — V1.49 — V1.48 Journaux, historiques et rapports</title>"
+          new_title = "<title>G10 Transport Scolaire V2 — V1.60 — Akanda & Inter-Akanda</title>"
+          marker = '<script src="v160.js"></script>'
+
+          if marker in text:
+              print("V1.60 déjà activée.")
+          else:
+              if text.count(old_title) != 1:
+                  raise SystemExit("Titre V1.59.1 attendu introuvable ou ambigu.")
+              if text.count("</body></html>") != 1:
+                  raise SystemExit("Balise de fin HTML inattendue.")
+              text = text.replace(old_title, new_title, 1)
+              loader = '\n<link rel="stylesheet" href="v160.css">\n<script src="v160.js"></script>\n'
+              text = text.replace("</body></html>", loader + "</body></html>", 1)
+              path.write_text(text, encoding="utf-8")
+
+      - name: Validate V1.60 JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check v160.js
+          grep -q 'V1.60 — Akanda & Inter-Akanda' index.html
+          grep -q 'href="v160.css"' index.html
+          grep -q 'src="v160.js"' index.html
+
+      - name: Commit V1.60
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "Aucune modification à committer."
+          else
+            git commit -m "V1.60: activer Akanda et Inter-Akanda"
+            git push
+          fi
