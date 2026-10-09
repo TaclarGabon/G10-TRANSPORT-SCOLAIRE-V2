@@ -226,6 +226,30 @@
     window.directionTab=function(t){var r=directionBaseV160.apply(this,arguments),b=document.getElementById('directionBody');if(!b)return r;if(t==='dashboard'&&!b.querySelector('.v160-analysis'))b.insertAdjacentHTML('afterbegin',analyticsV160());if(t==='bus'&&!b.querySelector('.v160-bus-grid'))b.insertAdjacentHTML('afterbegin',busRegistryHtmlV160());return r};
   }
 
+  /* V1.60.1 — justificatifs de dépenses cliquables, agrandissables et zoomables. */
+  var receiptZoomV160=1;
+  window.g10OpenReceiptV160=function(src,label){
+    if(!src)return;
+    var old=document.getElementById('v160ReceiptModal');if(old)old.remove();
+    receiptZoomV160=1;
+    var modal=document.createElement('div');modal.id='v160ReceiptModal';modal.className='v160-receipt-modal';
+    modal.innerHTML='<div class="v160-receipt-card" role="dialog" aria-modal="true" aria-label="Aperçu du justificatif"><div class="v160-receipt-head"><b>'+esc(label||'Justificatif de dépense')+'</b><div class="v160-receipt-tools"><button type="button" onclick="g10ReceiptZoomV160(-0.25)">− Zoom</button><button type="button" onclick="g10ReceiptZoomV160(0)">100 %</button><button type="button" onclick="g10ReceiptZoomV160(0.25)">+ Zoom</button><button type="button" class="v160-close" onclick="g10CloseReceiptV160()">Fermer</button></div></div><div class="v160-receipt-stage"><img id="v160ReceiptImage" src="'+src+'" alt="Justificatif agrandi"></div><div class="v160-receipt-hint">Clique sur + / − pour zoomer. Sur téléphone, l’image peut aussi être parcourue en faisant défiler la zone.</div></div>';
+    modal.addEventListener('click',function(e){if(e.target===modal)g10CloseReceiptV160()});
+    document.body.appendChild(modal);
+  };
+  window.g10ReceiptZoomV160=function(delta){
+    if(delta===0)receiptZoomV160=1;else receiptZoomV160=Math.max(.5,Math.min(3,receiptZoomV160+delta));
+    var img=document.getElementById('v160ReceiptImage');if(img)img.style.transform='scale('+receiptZoomV160+')';
+  };
+  window.g10CloseReceiptV160=function(){var m=document.getElementById('v160ReceiptModal');if(m)m.remove()};
+  document.addEventListener('click',function(e){
+    var img=e.target&&e.target.closest?e.target.closest('.expense-row .receipt-thumb'):null;
+    if(!img)return;
+    e.preventDefault();e.stopPropagation();
+    g10OpenReceiptV160(img.currentSrc||img.src,'Justificatif de dépense');
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('v160ReceiptModal'))g10CloseReceiptV160()});
+
   /* Libellés généraux : l’application couvre maintenant les deux services. */
   if(typeof window.spaceTitlebar==='function'){
     var titleBaseV160=window.spaceTitlebar;
