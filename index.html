@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>G10 Transport Scolaire V2 — V1.49 — V1.48 Journaux, historiques et rapports</title>
+<title>G10 Transport Scolaire V2 — Version intégrée — V1.49 — V1.48 Journaux, historiques et rapports</title>
 <style>
 :root{--b:#123d78;--bg:#eef4fb;--line:#dce6f0;--green:#17a663;--red:#ef4750;--orange:#ff812d;--purple:#7a42e6;--yellow:#ffc83d;--blue:#1676f3}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#17324f}
@@ -5696,5 +5696,226 @@ ensureFeedbackV152();save();
     }catch(e){clearTimeout(timer);done('')}
   };
 })();
+</script>
+<script>
+
+/* V1.55 — intégration progressive des demandes Martina et JC ; préservation des modules existants */
+(function(){
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const sub=id=>(st.subs||[]).find(x=>String(x.id)===String(id));
+  function ensureExtras(){
+    (st.subs||[]).forEach(x=>{if(!x.busId)x.busId='BUS-1';if(!x.scheduleV155)x.scheduleV155={};});
+    if(!st.parentAlertsV155)st.parentAlertsV155=[];
+    if(!st.busRegistryV155)st.busRegistryV155=[{id:'BUS-1',label:'Bus 1',driver:'MBA ONDO Emmanuel',active:true},{id:'BUS-2',label:'Bus 2 — Inter-Akanda',driver:'',active:false}];
+    else {let b=st.busRegistryV155.find(x=>x.id==='BUS-1');if(b)b.driver='MBA ONDO Emmanuel';}
+  }
+  ensureExtras();
+  const oldEdit=window.editSub;
+  window.editSub=function(id){
+    oldEdit(id);const x=sub(id),panel=document.getElementById('editPanel');if(!x||!panel)return;
+    const grid=panel.querySelector('.editgrid');if(!grid)return;
+    const school=document.getElementById('e_school');if(school){const list=document.createElement('datalist');list.id='v155schools';list.innerHTML=[...new Set(st.subs.map(a=>a.school).filter(Boolean))].map(n=>'<option value="'+esc(n)+'">').join('');panel.appendChild(list);school.setAttribute('list','v155schools')}
+    const extra=document.createElement('div');extra.style.display='contents';extra.innerHTML='<label>Classe<input id="e_className" value="'+esc(x.className||'')+'" placeholder="Ex. : Seconde, 6e"></label><label>Bus<select id="e_busId"><option value="BUS-1">Bus 1 — MBA ONDO Emmanuel</option><option value="BUS-2">Bus 2 — Inter-Akanda (à compléter)</option></select></label><label id="v155stopwrap">Point d’arrêt / relais<input id="e_relayStop" list="v155stops" value="'+esc(x.relayStop||'')+'" placeholder="Sélectionner ou saisir"></label><label id="v155partialwrap">Trajet partiel<select id="e_partialV155"><option value="">À préciser</option><option value="Matin uniquement">Matin uniquement</option><option value="Soir uniquement">Soir uniquement</option></select></label><datalist id="v155stops">'+[...new Set(st.subs.flatMap(a=>[a.relayStop,a.pickup,a.address]).filter(v=>v&&!/confirmer|compléter/i.test(v)))].slice(0,40).map(n=>'<option value="'+esc(n)+'">').join('')+'</datalist>';
+    grid.appendChild(extra);document.getElementById('e_busId').value=x.busId||'BUS-1';document.getElementById('e_partialV155').value=x.partialService||'';
+    const plan=document.getElementById('e_plan');const vis=()=>{const p=plan.value;document.getElementById('v155stopwrap').style.display=p==='Standard'?'':'none';document.getElementById('v155partialwrap').style.display=p==='Partiel'?'':'none';if(p==='VIP'){let pt=document.getElementById('e_pickupType');if(pt)pt.value='Domicile';}};
+    plan.addEventListener('change',vis);vis();
+  };
+  const oldSave=window.saveEdit;
+  window.saveEdit=function(id){const x=sub(id);if(x){const get=k=>document.getElementById(k)?.value;x.className=get('e_className')||'';x.busId=get('e_busId')||'BUS-1';x.relayStop=get('e_relayStop')||'';if(get('e_plan')==='Partiel')x.partialService=get('e_partialV155')||'';if(get('e_plan')==='VIP'){x.pickupType='Domicile';x.dropType='Domicile';}}oldSave(id)};
+  window.addSub=function(){
+    const id='new'+Date.now();st.subs.push({id,name:'',school:'',className:'',guardian:'',whatsapp:'',commune:'',district:'',address:'',pickup:'',drop:'',entry:'',exit:'',plan:'Standard',price:0,pending:5,payment:'À vérifier',subscriptionStatus:'À vérifier',ride:'À prendre',ret:'À récupérer',busId:'BUS-1'});
+    save();adminTab('abonnes');window.editSub(id);const p=document.getElementById('editPanel');if(p){p.scrollIntoView({behavior:'smooth',block:'start'});p.querySelector('h3').textContent='Nouvel abonné — formulaire complet';}
+  };
+  window.cleanSubV155=function(id){const x=sub(id);if(!x)return;if(x.payment==='Payé'||Number(x.paidAmount||x.receivedAmount||0)>0){alert('Ce dossier contient un paiement : archive-le plutôt que de supprimer ses justificatifs.');return;}if(!confirm('Retirer définitivement '+x.name+' des listes actives et des circuits ?'))return;if(!confirm('DEUXIÈME CONFIRMATION : cette suppression du dossier actif est irréversible. Continuer ?'))return;st.subs=st.subs.filter(a=>String(a.id)!==String(id));save();adminTab('abonnes')};
+  const baseMaster=window.masterTable;
+  window.masterTable=function(){let html=baseMaster();html=html.replace('<th>École / classe</th>','<th>École</th><th>Classe</th>');
+    (st.subs||[]).forEach(x=>{const joint=esc(x.school+' / '+(x.className||''));const original=(x.school||'')+' / '+(x.className||'');html=html.replace('<td class="">'+original+'</td>','<td class="">'+esc(x.school)+'</td><td class="">'+esc(x.className||'À préciser')+'</td>');});
+    return html;
+  };
+  function schedulePanel(x,editable){if(!x)return '<div class="card">Aucun enfant sélectionné.</div>';let days=['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];return '<div class="card"><h3>Emploi du temps — '+esc(x.name)+'</h3><p class="small">Horaires utiles au transport scolaire, sans détail des matières.</p><div style="overflow-x:auto"><table class="report-table"><thead><tr><th>Jour</th><th>Entrée</th><th>Sortie</th></tr></thead><tbody>'+days.map(d=>{let a=x.scheduleV155?.[d]||{};return '<tr><td>'+d+'</td><td>'+(editable?'<input type="time" id="v155in'+d+'" value="'+esc(a.start||'')+'">':esc(a.start||'—'))+'</td><td>'+(editable?'<input type="time" id="v155out'+d+'" value="'+esc(a.end||'')+'">':esc(a.end||'—'))+'</td></tr>'}).join('')+'</tbody></table></div>'+(editable?'<button class="btn green" onclick="saveScheduleV155(&quot;'+esc(x.id)+'&quot;)">Enregistrer les horaires</button>':'')+'</div>'}
+  window.saveScheduleV155=function(id){const x=sub(id);if(!x)return;x.scheduleV155=x.scheduleV155||{};['Lundi','Mardi','Mercredi','Jeudi','Vendredi'].forEach(d=>{x.scheduleV155[d]={start:document.getElementById('v155in'+d)?.value||'',end:document.getElementById('v155out'+d)?.value||''}});save();alert('Horaires enregistrés.');adminTab('horaires')};
+  window.selectScheduleV155=function(id){const x=sub(id);document.getElementById('v155scheduleHost').innerHTML=schedulePanel(x,true)};
+  function adminSchedules(){return '<div class="card"><h3>Horaires des enfants</h3><select onchange="selectScheduleV155(this.value)"><option value="">Choisir un enfant</option>'+st.subs.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('')+'</select></div><div id="v155scheduleHost"></div>'}
+  const oldAdmin=window.adminTab;window.adminTab=function(t){if(t==='horaires'){currentTabs.admin=t;updateSpaceTitle('admin',t);document.getElementById('adminBody').innerHTML=sectionHeader('Administration','Emplois du temps','Horaires d’entrée et de sortie pour organiser les circuits.')+adminSchedules();return}oldAdmin(t);if(t==='abonnes'){const p=document.getElementById('editPanel');if(p){let host=p.parentElement;if(host&&!document.getElementById('v155cleanPanel')){let d=document.createElement('div');d.id='v155cleanPanel';d.className='card';d.innerHTML='<h3>Nettoyage des dossiers non confirmés</h3><p class="small">Réservé à l’Administration. Les dossiers avec paiements doivent être conservés.</p><select id="v155cleanSelect"><option value="">Choisir un dossier</option>'+st.subs.filter(x=>x.payment!=='Payé').map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||'Nouveau dossier')+'</option>').join('')+'</select> <button class="btn light" onclick="cleanSubV155(document.getElementById(\'v155cleanSelect\').value)">Nettoyer le dossier</button>';host.appendChild(d)}}}}
+  const oldParent=window.parentTab;
+  window.parentTab=function(t){if(t!=='alertes'){oldParent(t);return;}currentTabs.parent=t;updateSpaceTitle('parent',t);const x=currentParentChild();document.getElementById('parentBody').innerHTML=sectionHeader('Espace parent','Absences et alertes','Signaler un changement concernant le transport de votre enfant.')+parentChildSelector()+schedulePanel(x,false)+'<div class="card"><h3>Envoyer une information</h3><label>Nature du signalement<select id="v155alertType"><option value="Absence">Absence</option><option value="Entrée modifiée">Entrée plus tôt / plus tard</option><option value="Sortie modifiée">Sortie plus tôt / plus tard</option><option value="Autre">Autre information de transport</option></select></label><label>Date concernée<input type="date" id="v155alertDate"></label><label>Nouvel horaire (si nécessaire)<input type="time" id="v155alertTime"></label><label>Précisions<textarea id="v155alertNote" rows="3"></textarea></label><button class="btn green" onclick="sendParentAlertV155()">Envoyer le signalement</button></div>'};
+  window.sendParentAlertV155=function(){const x=currentParentChild();if(!x)return;const date=document.getElementById('v155alertDate').value;if(!date){alert('Précise la date concernée.');return;}let type=document.getElementById('v155alertType').value;let item={id:'a'+Date.now(),childId:x.id,childName:x.name,busId:x.busId||'BUS-1',date,type,time:document.getElementById('v155alertTime').value,note:document.getElementById('v155alertNote').value,createdAt:new Date().toISOString(),status:'À examiner'};st.parentAlertsV155.push(item);save();alert('Signalement transmis à G10. Les changements de circuit doivent être confirmés par l’équipe.');parentTab('alertes')};
+  function alertList(){let a=(st.parentAlertsV155||[]).slice().reverse();return '<div class="card"><h3>Alertes des familles</h3>'+(a.length?a.map(x=>'<div class="row"><div><b>'+esc(x.childName)+'</b> — '+esc(x.type)+'<div class="small">'+esc(x.date)+' '+esc(x.time||'')+' • '+esc(x.busId)+'</div><div>'+esc(x.note||'')+'</div><div class="small">'+esc(x.status)+'</div></div><button class="btn light" onclick="ackAlertV155(&quot;'+x.id+'&quot;)">Marquer traité</button></div>').join(''):'Aucun signalement reçu.')+'</div>'}
+  window.ackAlertV155=function(id){let a=st.parentAlertsV155.find(x=>x.id===id);if(a){a.status='Traité';save();const role=typeof currentSpace!=='undefined'?currentSpace:'admin';if(role==='gestion')gestionTab('alertes');else if(role==='direction')directionTab('alertes');else adminTab('alertes')}};
+  const oldAdmin2=window.adminTab;window.adminTab=function(t){if(t==='alertes'){currentTabs.admin=t;updateSpaceTitle('admin',t);document.getElementById('adminBody').innerHTML=alertList();return;}oldAdmin2(t)};
+  const oldGestion=window.gestionTab;window.gestionTab=function(t){if(t==='alertes'){currentTabs.gestion=t;updateSpaceTitle('gestion',t);document.getElementById('gestionBody').innerHTML=alertList();return;}oldGestion(t)};
+  const oldDirection=window.directionTab;window.directionTab=function(t){if(t==='alertes'){currentTabs.direction=t;updateSpaceTitle('direction',t);document.getElementById('directionBody').innerHTML=alertList();return;}oldDirection(t)};
+  const oldDriver=window.driverTab;window.driverTab=function(t){oldDriver(t);if(t==='circuit'){let b=document.getElementById('driverBody');if(b)b.insertAdjacentHTML('afterbegin',alertList())}};
+  const oldRender=window.render;window.render=function(id){oldRender(id);let target=document.querySelector('#'+id+' .topbar')||document.querySelector('#'+id+' .tabs');if(!target){let body=document.getElementById(id);target=body?.querySelector('.nav,.top-tabs,.role-tabs');}if(!target)return;const items=id==='parent'?[['alertes','Absences et alertes']]:id==='admin'?[['horaires','Horaires'],['alertes','Alertes parents']]:['gestion','direction'].includes(id)?[['alertes','Alertes parents']]:[];items.forEach(([t,label])=>{if(target.querySelector('[data-v155="'+t+'"]'))return;let btn=document.createElement('button');btn.className='btn light';btn.dataset.v155=t;btn.textContent=label;btn.onclick=()=>({parent:parentTab,admin:adminTab,gestion:gestionTab,direction:directionTab}[id])(t);target.appendChild(btn)});};
+  save();
+})();
+
+</script>
+<script>
+
+/* V1.55.1 : correction ciblée des lignes et horaires parents */
+(function(){
+ const getSub=id=>(st.subs||[]).find(x=>String(x.id)===String(id));
+ const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const baseMaster=window.masterTable;
+ window.masterTable=function(){
+   let html=baseMaster();
+   html=html.replace(/<th>Action<\/th>/,'<th>Action</th><th>Nettoyer</th>');
+   html=html.replace(/(<td class="action"><div class="loc-cell"><button onclick="editSub\('([^']+)'\)">Modifier<\/button>[\s\S]*?<\/div><\/td>)(<\/tr>)/g,(all,cell,id,end)=>cell+'<td class="action"><button type="button" class="btn light" onclick="nettoyerLigneG10('+JSON.stringify(id)+')">Nettoyer</button></td>'+end);
+   return html;
+ };
+ window.nettoyerLigneG10=function(id){
+   const x=getSub(id);if(!x)return;
+   const paid=Number(x.paidAmount||x.receivedAmount||0)>0||x.payment==='Payé';
+   if(paid){alert('Ce dossier comporte un paiement. Il doit être archivé avant toute réutilisation de sa ligne, pour conserver les rapports et reçus.');return;}
+   if(!confirm('Nettoyer la ligne de '+(x.name||'cet abonné')+' ? Le badge QR et les accès associés ne devront plus être utilisés.'))return;
+   if(!confirm('CONFIRMATION FINALE : vider cette ligne et la rendre disponible pour un autre enfant ?'))return;
+   const keepId=x.id;
+   Object.keys(x).forEach(k=>{if(!['id'].includes(k))delete x[k]});
+   Object.assign(x,{id:keepId,name:'',school:'',className:'',guardian:'',whatsapp:'',phone2:'',email:'',commune:'',district:'',address:'',pickup:'',returnPickup:'',drop:'',entry:'',exit:'',emergency:'',emergencyPhone:'',plan:'Standard',price:0,payment:'À vérifier',subscriptionStatus:'À vérifier',pending:1,ride:'À prendre',ret:'À récupérer',busId:'BUS-1',scheduleV155:{},qrRef:'',qrDisabled:true,clearedAt:new Date().toISOString()});
+   save();adminTab('abonnes');
+ };
+ function parentHours(x){
+   if(!x)return '';
+   const days=['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+   const rows=days.map((day,i)=>{const a=(x.scheduleV155||{})[day]||{};return '<tr><td>'+day+'</td><td><input type="time" id="g10pin'+i+'" value="'+safe(a.start||'')+'"></td><td><input type="time" id="g10pout'+i+'" value="'+safe(a.end||'')+'"></td></tr>'}).join('');
+   return '<div class="card"><h3>Emploi du temps — heures de cours</h3><p class="small">Renseigne uniquement les heures habituelles de début et de fin des cours. Pour une absence ou une sortie exceptionnelle, utilise le signalement ci-dessous.</p><div style="overflow-x:auto"><table class="report-table"><thead><tr><th>Jour</th><th>Début des cours</th><th>Fin des cours</th></tr></thead><tbody>'+rows+'</tbody></table></div><button class="btn green" onclick="saveParentHoursG10()">Enregistrer les horaires</button></div>';
+ }
+ window.saveParentHoursG10=function(){
+   const x=currentParentChild();if(!x)return;
+   x.scheduleV155=x.scheduleV155||{};
+   ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'].forEach((d,i)=>{x.scheduleV155[d]={start:document.getElementById('g10pin'+i)?.value||'',end:document.getElementById('g10pout'+i)?.value||''}});
+   save();alert('Horaires enregistrés et visibles par l’équipe G10.');parentTab('alertes');
+ };
+ const oldParent=window.parentTab;
+ window.parentTab=function(t){oldParent(t);if(t!=='alertes')return;
+   const body=document.getElementById('parentBody'),x=currentParentChild();if(!body||!x)return;
+   const cards=body.querySelectorAll('.card');if(cards.length)cards[0].outerHTML=parentHours(x);
+   const type=document.getElementById('v155alertType');if(type){type.innerHTML='<option value="Absence">Absent — aucun ramassage matin ni retour</option><option value="Sortie modifiée">Finit plus tôt — préciser la date et l’heure</option><option value="Entrée modifiée">Commence plus tôt / plus tard</option><option value="Autre">Autre information de transport</option>';type.onchange=()=>{const t=document.getElementById('v155alertTime');if(t){t.disabled=type.value==='Absence';if(t.disabled)t.value=''}};type.dispatchEvent(new Event('change'))}
+   const notice=document.createElement('p');notice.className='small';notice.style.fontWeight='bold';notice.textContent='Absent = aucun ramassage le matin et aucun retour le soir pour la date indiquée. Finit plus tôt = indiquer obligatoirement la nouvelle heure; l’équipe doit confirmer la prise en charge.';type?.parentElement?.insertAdjacentElement('afterend',notice);
+ };
+ const oldSend=window.sendParentAlertV155;
+ window.sendParentAlertV155=function(){
+   const t=document.getElementById('v155alertType')?.value;
+   if((t==='Sortie modifiée'||t==='Entrée modifiée')&&!document.getElementById('v155alertTime')?.value){alert('Indique la nouvelle heure pour ce changement.');return;}
+   if(t==='Absence'&&!confirm('Confirmer l’absence ? Aucun ramassage le matin ni retour le soir à la date sélectionnée.'))return;
+   oldSend();
+ };
+})();
+
+</script>
+<style>
+.g10-clean{background:#d83c49!important;color:white!important;border:0;border-radius:7px;padding:6px 9px;font-weight:800;cursor:pointer}.g10-clean.done{background:#14a663!important}.g10-parent-hours{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:8px}.g10-parent-hours label{display:block;font-size:12px;font-weight:700}.g10-parent-hours input,.g10-parent-hours select{width:100%;padding:8px;border:1px solid #cbd9e6;border-radius:7px}.g10-empty td{color:#8393a2}
+</style>
+<script>
+/* G10 intégration contrôlée : nettoyage, édition guidée, horaires parent */
+(function(){
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function find(id){return st.subs.find(function(x){return String(x.id)===String(id)})}
+function paid(x){return x.payment==='Payé'||Number(x.paidAmount||0)>0||!!x.paymentDate||!!x.receiptRef}
+function idJs(id){return JSON.stringify(String(id)).replace(/"/g,'&quot;')}
+window.g10CleanRow=function(id){var x=find(id);if(!x)return;if(paid(x)){alert('Dossier avec paiement : nettoyage interdit pour conserver les justificatifs.');return}if(x.g10Cleaned)return;
+if(!confirm('Nettoyer cette ligne ? Les informations de ce dossier seront effacées.'))return;
+if(!confirm('DERNIÈRE CONFIRMATION : vider définitivement la ligne de '+(x.name||'ce dossier')+' ?'))return;
+var keys=Object.keys(x);keys.forEach(function(k){if(k!=='id'&&k!=='g10Cleaned')delete x[k]});x.g10Cleaned=true;x.name='';x.school='';x.payment='À vérifier';x.subscriptionStatus='À vérifier';x.ride='À prendre';x.ret='À récupérer';x.price=0;x.pending=0;
+save();adminTab('abonnes');};
+var oldMaster=window.masterTable;
+window.masterTable=function(){var h=oldMaster.apply(this,arguments);var box=document.createElement('div');box.innerHTML=h;var table=box.querySelector('table.master');if(!table)return h;var head=table.querySelector('thead tr');if(head){var th=document.createElement('th');th.textContent='Nettoyer';head.appendChild(th)}var rows=table.querySelectorAll('tbody tr');rows.forEach(function(tr,i){var x=st.subs[i];if(!x)return;var cells=tr.querySelectorAll('td');if(x.g10Cleaned){tr.classList.add('g10-empty');cells.forEach(function(td,j){if(j===0||j===cells.length-1)return;td.textContent='—'});var act=cells[cells.length-1];if(act)act.innerHTML='<button onclick="editSub('+idJs(x.id)+')">Modifier</button>'}var td=document.createElement('td');td.innerHTML=x.g10Cleaned?'<button class="g10-clean done" disabled>✓ Nettoyé</button>':'<button class="g10-clean" '+(paid(x)?'disabled title="Paiement enregistré" style="opacity:.35"':'')+' onclick="g10CleanRow('+idJs(x.id)+')">Nettoyer</button>';tr.appendChild(td)});return box.innerHTML};
+var oldEdit=window.editSub;
+window.editSub=function(id){oldEdit.apply(this,arguments);var x=find(id),p=document.getElementById('editPanel');if(!x||!p)return;var fields=['school','guardian','commune','district','address','pickup','drop'];fields.forEach(function(k){var el=p.querySelector('#e_'+k);if(!el)return;var values=Array.from(new Set(st.subs.map(function(s){return String(s[k]||'').trim()}).filter(Boolean)));var dl=document.createElement('datalist');dl.id='g10list_'+k;values.forEach(function(v){var o=document.createElement('option');o.value=v;dl.appendChild(o)});p.appendChild(dl);el.setAttribute('list',dl.id)});if(x.g10Cleaned){var title=p.querySelector('h3');if(title)title.textContent='Réutiliser la ligne — nouvel abonné';}p.scrollIntoView({behavior:'smooth',block:'start'})};
+var oldSaveEdit=window.saveEdit;
+window.saveEdit=function(id){var x=find(id);if(x&&x.g10Cleaned){var nm=document.getElementById('e_name');if(!nm||!nm.value.trim()){alert('Renseigner le nom de l’enfant.');return}delete x.g10Cleaned;}return oldSaveEdit.apply(this,arguments)};
+function schedule(x){var days=['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];var h=x.g10Schedule||{};return '<div class="card"><h2>Emploi du temps de mon enfant</h2><p class="small">Indique uniquement les heures habituelles de début et de fin des cours.</p><div class="g10-parent-hours">'+days.map(function(d){var v=h[d]||{};return '<div><b>'+d+'</b><label>Début<input type="time" id="g10begin'+d+'" value="'+esc(v.begin||'')+'"></label><label>Fin<input type="time" id="g10end'+d+'" value="'+esc(v.end||'')+'"></label></div>'}).join('')+'</div><button class="btn blue" onclick="g10SaveSchedule('+idJs(x.id)+')">Enregistrer les horaires</button></div><div class="card"><h2>Signaler un changement</h2><p class="small">Absent : aucun ramassage le matin et aucun dépôt le soir. Fin plus tôt : précise la date et l’heure.</p><div class="g10-parent-hours"><label>Date<input id="g10date" type="date"></label><label>Situation<select id="g10kind" onchange="document.getElementById(\'g10early\').style.display=this.value===\'early\'?\'block\':\'none\'"><option value="absent">Absent — aucun transport</option><option value="early">Fin des cours plus tôt</option></select></label><label id="g10early" style="display:none">Nouvelle heure de sortie<input type="time" id="g10hour"></label></div><button class="btn blue" onclick="g10SendChange('+idJs(x.id)+')">Envoyer l’alerte</button></div>'}
+window.g10SaveSchedule=function(id){var x=find(id);if(!x)return;var h={};['Lundi','Mardi','Mercredi','Jeudi','Vendredi'].forEach(function(d){h[d]={begin:document.getElementById('g10begin'+d).value,end:document.getElementById('g10end'+d).value}});x.g10Schedule=h;save();alert('Horaires enregistrés.');parentTab('horaires')};
+window.g10SendChange=function(id){var x=find(id);if(!x)return;var date=document.getElementById('g10date').value,kind=document.getElementById('g10kind').value,hour=document.getElementById('g10hour').value;if(!date){alert('Choisir une date.');return}if(kind==='early'&&!hour){alert('Indiquer la nouvelle heure de sortie.');return}x.g10Alerts=x.g10Alerts||[];x.g10Alerts.push({date:date,type:kind,hour:kind==='early'?hour:'',createdAt:new Date().toISOString()});save();alert('Alerte enregistrée pour Administration, Gestion et Chauffeur.');parentTab('horaires')};
+var oldParentTab=window.parentTab;
+window.parentTab=function(t){if(t==='horaires'){currentTabs.parent=t;var b=document.getElementById('parentBody'),x=currentParentChild();b.innerHTML=sectionHeader('Espace parent','Emploi du temps','Horaires et changements de transport')+parentChildSelector()+(x?schedule(x):'<div class="card">Aucun enfant sélectionné.</div>');return}return oldParentTab.apply(this,arguments)};
+var oldRender=window.render;
+window.render=function(id){oldRender.apply(this,arguments);if(id==='parent'){var bar=document.querySelector('#parent .top');if(bar&&!bar.querySelector('[data-g10-hours]')){var btn=document.createElement('button');btn.textContent='Emploi du temps';btn.setAttribute('data-g10-hours','1');btn.onclick=function(){parentTab('horaires')};bar.appendChild(btn)}}};
+function alerts(){var today=new Date().toISOString().slice(0,10);return st.subs.filter(function(x){return !x.g10Cleaned}).flatMap(function(x){return (x.g10Alerts||[]).filter(function(a){return a.date>=today}).map(function(a){return '<div class="notice"><b>'+esc(x.name)+'</b> — '+esc(a.date)+' : '+(a.type==='absent'?'Absent — aucun transport':'Fin plus tôt à '+esc(a.hour))+'</div>'})}).join('')}
+var oldAdminTab=window.adminTab;window.adminTab=function(t){oldAdminTab.apply(this,arguments);if(t==='abonnes'){var b=document.getElementById('adminBody');if(b)b.insertAdjacentHTML('afterbegin',alerts())}};
+var oldDriverTab=window.driverTab;window.driverTab=function(t){oldDriverTab.apply(this,arguments);var b=document.getElementById('driverBody');if(b)b.insertAdjacentHTML('afterbegin',alerts())};
+var oldGestionTab=window.gestionTab;window.gestionTab=function(t){oldGestionTab.apply(this,arguments);var b=document.getElementById('gestionBody');if(b)b.insertAdjacentHTML('afterbegin',alerts())};
+})();
+
+/* G10 correctif ciblé : supprimer le panneau de nettoyage doublon et rétablir QR groupés. */
+(function(){
+  function retirerDoublon(){
+    var p=document.getElementById('v155cleanPanel');
+    if(p) p.remove();
+  }
+  var adminAvant=window.adminTab;
+  window.adminTab=function(t){
+    if(t==='qrall' || t==='qr'){
+      currentTabs.admin=t;
+      updateSpaceTitle('admin',t);
+      var b=document.getElementById('adminBody');
+      if(b){
+        try{
+          b.innerHTML=sectionHeader('Administration','Voir tous les QR codes',
+          'Préparer et imprimer les QR codes des abonnés confirmés.')+allQRPageV147();
+        }catch(e){
+          b.innerHTML='<div class="card"><h3>QR codes</h3><p>Impossible de préparer les QR codes : '+String(e.message||e).replace(/[<>&]/g,'')+'</p></div>';
+        }
+      }
+      retirerDoublon();
+      return;
+    }
+    var result=adminAvant.apply(this,arguments);
+    retirerDoublon();
+    return result;
+  };
+  retirerDoublon();
+})();
+
+/* V1.59 corrigée : listes dans les formulaires, sans modifier les fonctions de paiement. */
+(function(){
+  var classes=['Maternelle','Petite section','Moyenne section','Grande section','CP','CE1','CE2','CM1','CM2','6ème','5ème','4ème','3ème','2nde','1ère','Terminale'];
+  function val(v){return String(v==null?'':v).trim();}
+  function normalizeClass(v){
+    var z=val(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s/g,'');
+    var m=z.match(/^([6543])(?:e|eme|ieme)?$/);
+    if(m)return m[1]+'ème';
+    if(/^(seconde|2nde|2de)$/.test(z))return '2nde';
+    if(/^(premiere|1ere|1re)$/.test(z))return '1ère';
+    return val(v);
+  }
+  function values(key){
+    var subs=(typeof st!=='undefined'&&st&&Array.isArray(st.subs))?st.subs:[];
+    return Array.from(new Set(subs.map(function(x){return val(x[key])}).filter(function(x){
+      return x&&!/^(a confirmer|à confirmer|a completer|à compléter)$/i.test(x);
+    }))).sort(function(a,b){return a.localeCompare(b,'fr')});
+  }
+  function enhance(){
+    var panel=document.getElementById('editPanel');
+    if(!panel||!panel.querySelector('#e_name'))return;
+    var cl=panel.querySelector('#e_className');
+    if(cl&&cl.tagName!=='SELECT'){
+      var current=normalizeClass(cl.value), sel=document.createElement('select');
+      sel.id=cl.id;sel.className=cl.className;sel.style.cssText=cl.style.cssText;
+      sel.appendChild(new Option('— Choisir la classe —',''));
+      Array.from(new Set(classes.concat(values('className').map(normalizeClass)).concat(current?[current]:[]))).forEach(function(v){sel.appendChild(new Option(v,v))});
+      cl.replaceWith(sel);sel.value=current;
+    }
+    [['school','school'],['commune','commune'],['district','district'],['address','address'],['pickup','pickup'],['relayStop','relayStop']].forEach(function(pair){
+      var el=panel.querySelector('#e_'+pair[0]);
+      if(!el||el.tagName!=='INPUT')return;
+      var listId='g10v159_'+pair[0], dl=panel.querySelector('#'+listId);
+      if(!dl){dl=document.createElement('datalist');dl.id=listId;panel.appendChild(dl)}
+      dl.replaceChildren();
+      values(pair[1]).forEach(function(v){dl.appendChild(new Option(v,v))});
+      el.setAttribute('list',listId);
+    });
+  }
+  var scheduled=false;
+  var observer=new MutationObserver(function(){
+    if(scheduled)return;
+    scheduled=true;
+    setTimeout(function(){scheduled=false;enhance()},0);
+  });
+  if(document.body)observer.observe(document.body,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',enhance);else enhance();
+})();
+
 </script>
 </body></html>
