@@ -311,4 +311,48 @@
     muts.forEach(function(m){Array.prototype.forEach.call(m.addedNodes||[],function(n){if(n.nodeType===1)activateExpenseImagesV1601(n)})});
   }).observe(document.documentElement,{childList:true,subtree:true});
 
+  /* V1.60.2 — onglet Emplois du temps dans l’espace Administration.
+     Le module de saisie existe déjà dans le noyau (adminTab('horaires'));
+     ce correctif le rend directement accessible à Martina depuis le menu Administration. */
+  function g10AdminScheduleTabV1602(){
+    var screen=document.getElementById('admin');
+    if(!screen)return;
+    var top=screen.querySelector('.top');
+    if(!top||top.querySelector('[data-v1602-schedule]'))return;
+    var btn=document.createElement('button');
+    btn.type='button';
+    btn.setAttribute('data-v1602-schedule','1');
+    btn.textContent='Emplois du temps';
+    btn.className=currentTabs&&currentTabs.admin==='horaires'?'on':'';
+    btn.onclick=function(){
+      if(typeof markTab==='function')markTab(btn);
+      if(typeof adminTab==='function')adminTab('horaires');
+    };
+    top.appendChild(btn);
+  }
+
+  if(typeof window.render==='function'){
+    var renderBaseV1602=window.render;
+    window.render=function(id){
+      var r=renderBaseV1602.apply(this,arguments);
+      if(id==='admin')g10AdminScheduleTabV1602();
+      return r;
+    };
+  }
+
+  if(typeof window.adminTab==='function'){
+    var adminTabBaseV1602=window.adminTab;
+    window.adminTab=function(t){
+      var r=adminTabBaseV1602.apply(this,arguments);
+      if(t==='horaires')setTimeout(g10AdminScheduleTabV1602,0);
+      return r;
+    };
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',g10AdminScheduleTabV1602);
+  }else{
+    g10AdminScheduleTabV1602();
+  }
+
 })();
