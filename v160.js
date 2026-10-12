@@ -1,4 +1,4 @@
-/* ===== V1.60 — intégration Inter-Akanda sans PIN ===== */
+/* ===== V1.60.1 — correctifs affichage Direction + aperçu justificatifs ===== */
 (function(){
   'use strict';
   var V160_SCHOOLS=[
@@ -257,4 +257,58 @@
   }
   function refreshHomeV160(){var z=document.querySelector('#home .zone');if(z)z.textContent='📍 Akanda • Inter-Akanda'}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshHomeV160);else refreshHomeV160();
+  /* V1.60.1 — Aperçu agrandissable des photos de factures / justificatifs. */
+  function ensureImageViewerV1601(){
+    if(document.getElementById('v160ImageModal'))return;
+    var modal=document.createElement('div');
+    modal.id='v160ImageModal';
+    modal.className='v160-img-modal';
+    modal.setAttribute('aria-hidden','true');
+    modal.innerHTML='<div class="v160-img-dialog" role="dialog" aria-modal="true" aria-label="Aperçu du justificatif"><div class="v160-img-toolbar"><strong>Justificatif</strong><div class="v160-img-actions"><button type="button" data-act="minus">−</button><button type="button" data-act="reset">100%</button><button type="button" data-act="plus">+</button><button type="button" data-act="close">Fermer</button></div></div><div class="v160-img-stage"><img class="v160-img-preview" alt="Justificatif agrandi"></div></div>';
+    document.body.appendChild(modal);
+    var img=modal.querySelector('.v160-img-preview'),scale=1;
+    function apply(){img.style.transform='scale('+scale+')';modal.querySelector('[data-act="reset"]').textContent=Math.round(scale*100)+'%'}
+    function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');img.removeAttribute('src');scale=1;apply()}
+    modal.addEventListener('click',function(e){
+      var act=e.target&&e.target.getAttribute&&e.target.getAttribute('data-act');
+      if(act==='close'){close();return}
+      if(act==='plus'){scale=Math.min(4,scale+0.25);apply();return}
+      if(act==='minus'){scale=Math.max(0.5,scale-0.25);apply();return}
+      if(act==='reset'){scale=1;apply();return}
+      if(e.target===modal)close();
+    });
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.classList.contains('open'))close()});
+    window.g10OpenImageV1601=function(src){
+      if(!src)return;
+      scale=1;img.src=src;apply();modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+    };
+  }
+  function imageEligibleV1601(img){
+    if(!img||!img.src)return false;
+    if(img.closest('.v160-img-modal'))return false;
+    var host=img.closest('#adminBody,#directionBody,#gestionBody,#driverBody,#chauffeurBody');
+    if(!host)return false;
+    var card=img.closest('.card,tr,[class*="expense"],[class*="history"],[class*="histor"]')||img.parentElement;
+    var txt=(card&&card.textContent||'').toLowerCase();
+    return /carburant|facture|justificatif|dépense|depense|historique|rapport|litres|odomètre|odometre/.test(txt);
+  }
+  function activateExpenseImagesV1601(root){
+    ensureImageViewerV1601();
+    (root||document).querySelectorAll('#adminBody img,#directionBody img,#gestionBody img,#driverBody img,#chauffeurBody img').forEach(function(img){
+      if(!imageEligibleV1601(img)||img.dataset.v160Zoom==='1')return;
+      img.dataset.v160Zoom='1';img.classList.add('v160-clickable-proof');img.title='Cliquer pour agrandir';
+    });
+  }
+  document.addEventListener('click',function(e){
+    var img=e.target&&e.target.closest&&e.target.closest('img');
+    if(!imageEligibleV1601(img))return;
+    e.preventDefault();e.stopPropagation();ensureImageViewerV1601();window.g10OpenImageV1601(img.currentSrc||img.src);
+  },true);
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){activateExpenseImagesV1601(document)});
+  }else activateExpenseImagesV1601(document);
+  new MutationObserver(function(muts){
+    muts.forEach(function(m){Array.prototype.forEach.call(m.addedNodes||[],function(n){if(n.nodeType===1)activateExpenseImagesV1601(n)})});
+  }).observe(document.documentElement,{childList:true,subtree:true});
+
 })();
