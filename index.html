@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>G10 Transport Scolaire V2 — V1.60 — Akanda & Inter-Akanda</title>
+<title>G10 Transport Scolaire V2 — Version intégrée — V1.49 — V1.48 Journaux, historiques et rapports</title>
 <style>
 :root{--b:#123d78;--bg:#eef4fb;--line:#dce6f0;--green:#17a663;--red:#ef4750;--orange:#ff812d;--purple:#7a42e6;--yellow:#ffc83d;--blue:#1676f3}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#17324f}
@@ -5918,7 +5918,64 @@ var oldGestionTab=window.gestionTab;window.gestionTab=function(t){oldGestionTab.
 })();
 
 </script>
-
-<link rel="stylesheet" href="v160.css">
-<script src="v160.js"></script>
+<script>
+/* V1.61 — Ajout NON destructif des colonnes Axe / Préparer le transfert, sans déplacement de dossier. */
+(function(){
+  'use strict';
+  function textSafe(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function record(id){return (st.subs||[]).find(function(x){return String(x.id)===String(id)})}
+  function initialAxe(x){
+    if(x.transportAxe==='Akanda'||x.transportAxe==='Owendo')return x.transportAxe;
+    /* Seulement une proposition d'affichage ; aucune écriture ni migration automatique. */
+    return ['BUS-1','BUS-2'].includes(String(x.busId||''))?'Akanda':'';
+  }
+  window.g10V161SetAxe=function(id,value){
+    var x=record(id);if(!x)return;
+    if(!['Akanda','Owendo',''].includes(value))return;
+    x.transportAxe=value;
+    if(value!=='Owendo')x.transportTransferStatus='';
+    else if(!x.transportTransferStatus)x.transportTransferStatus='En attente';
+    save();adminTab('abonnes');
+  };
+  window.g10V161SetTransfer=function(id,value){
+    var x=record(id);if(!x)return;
+    if((x.transportAxe||initialAxe(x))!=='Owendo'){
+      alert('Choisir l’axe Owendo avant de préparer un transfert.');return;
+    }
+    if(value==='Transférer'){
+      alert('Transfert non encore activé : les données restent dans le tableau original. Choisir « Prêt pour transfert » en attendant.');
+      adminTab('abonnes');return;
+    }
+    if(value!=='En attente'&&value!=='Prêt pour transfert')return;
+    x.transportTransferStatus=value;
+    save();adminTab('abonnes');
+  };
+  function enhanceTable(h){
+    var box=document.createElement('div');box.innerHTML=h;
+    var table=box.querySelector('table.master');if(!table)return h;
+    var header=table.querySelector('thead tr');if(!header)return h;
+    ['Axe de transport','Préparer le transfert'].forEach(function(t){var th=document.createElement('th');th.textContent=t;header.appendChild(th)});
+    var rows=table.querySelectorAll('tbody tr');
+    rows.forEach(function(tr,i){
+      var x=(st.subs||[])[i];if(!x)return;
+      var id=JSON.stringify(String(x.id)).replace(/"/g,'&quot;');
+      var axe=initialAxe(x),status=x.transportTransferStatus||'En attente';
+      var a=document.createElement('td');a.innerHTML='<select class="select-compact" aria-label="Axe de transport" onchange="g10V161SetAxe('+id+',this.value)">'+
+        '<option value=""'+(!axe?' selected':'')+'>À vérifier</option>'+
+        '<option value="Akanda"'+(axe==='Akanda'?' selected':'')+'>Akanda</option>'+
+        '<option value="Owendo"'+(axe==='Owendo'?' selected':'')+'>Owendo</option></select>';
+      var t=document.createElement('td');
+      if(axe!=='Owendo')t.textContent=axe==='Akanda'?'Non nécessaire':'Choisir un axe';
+      else t.innerHTML='<select class="select-compact" aria-label="Préparer le transfert" onchange="g10V161SetTransfer('+id+',this.value)">'+
+        '<option value="En attente"'+(status==='En attente'?' selected':'')+'>En attente</option>'+
+        '<option value="Prêt pour transfert"'+(status==='Prêt pour transfert'?' selected':'')+'>Prêt pour transfert</option>'+
+        '<option value="Transférer">Transférer (plus tard)</option></select>';
+      tr.appendChild(a);tr.appendChild(t);
+    });
+    return box.innerHTML;
+  }
+  var existingMaster=window.masterTable;
+  window.masterTable=function(){return enhanceTable(existingMaster.apply(this,arguments))};
+})();
+</script>
 </body></html>
