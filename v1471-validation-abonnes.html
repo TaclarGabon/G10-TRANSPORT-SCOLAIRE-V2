@@ -23,6 +23,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .master tbody tr:nth-child(even){background:#fbfdff}
 .preview-note{border-left:3px solid #176fd1;padding:10px;background:#fff;font-size:12px;margin-bottom:8px}
 .edit-btn,.clean-btn{border:0;border-radius:9px;color:white;font-size:11px;font-weight:850;padding:9px 12px;cursor:pointer}.edit-btn{background:#176fd1}.clean-btn{background:#e43d50}.master td{white-space:normal;min-width:75px}.master td:nth-child(2){min-width:140px}.master td:nth-child(3){min-width:150px}.master td:nth-child(5){min-width:140px}.master td:nth-child(6),.master td:nth-child(7),.master td:nth-child(8){min-width:130px}
+.master select{width:100%;min-width:135px;padding:8px;border:1px solid #c9d8e6;border-radius:8px;background:#fff;color:#17324f}.master th:nth-child(2){min-width:190px}.qr-demo{border:0;border-radius:9px;padding:9px 11px;background:#176fd1;color:white;font-weight:800;cursor:pointer;white-space:nowrap}.qr-demo:disabled{background:#e9eff5;color:#74889a;cursor:not-allowed}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -48,5 +49,30 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 var rows=document.getElementById('rows');for(var i=1;i<=25;i++){var tr=document.createElement('tr');tr.innerHTML='<td>'+i+'</td><td>Élève de test '+i+'</td><td>Établissement de test</td><td>6ème</td><td>Parent de test</td><td>Contact de test '+i+'</td><td>Urgence de test '+i+'</td><td>Adresse de test '+i+'</td><td>Bus '+(i%3+1)+'</td><td><button class="edit-btn" type="button" onclick="editDemo(this)">Modifier</button></td><td><button class="clean-btn" type="button" onclick="cleanDemo(this)">Nettoyer</button></td>';rows.appendChild(tr)}
 function editDemo(btn){var tr=btn.closest('tr');var cell=tr.cells[1];var value=prompt('Modifier le nom de démonstration :',cell.textContent);if(value!==null&&value.trim())cell.textContent=value.trim()}
 function cleanDemo(btn){var tr=btn.closest('tr');if(confirm('Nettoyer uniquement cette ligne fictive de la démonstration ?'))tr.remove()}
-document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')location.reload();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
+
+const abonnesMarkup=document.getElementById('panel').innerHTML;
+const tarifs=[10000,15000,17500,20000,25000,30000,35000,40000,45000,50000,55000,60000,65000,70000,75000,80000,85000,90000,95000,100000,110000,120000,130000,140000,150000];
+function fieldSelect(values,index,cls){return '<select class="'+cls+'" aria-label="'+cls+'">'+values.map(function(v,j){return '<option'+(j===index?' selected':'')+'>'+v+'</option>'}).join('')+'</select>'}
+function showAbonnement(){
+ var p=document.getElementById('panel');
+ p.innerHTML='<div class="card head"><div><h2>Tableau des abonnements — Zone Akanda</h2><div class="small">Formule, tarif, réduction, statut et QR code par élève.</div></div></div>'+
+ '<div class="table-note"><b>Présentation demandée par Martina.</b> Le QR code devient disponible uniquement lorsque l’abonnement est confirmé. Données de démonstration, sans synchronisation Firebase.</div>'+
+ '<div class="master-wrap"><table class="master"><thead><tr><th>#</th><th>Nom de l’élève</th><th>Formule</th><th>Tarif mensuel</th><th>Réduction</th><th>Statut</th><th>QR code</th></tr></thead><tbody id="subscriptionRows"></tbody></table></div>';
+ var body=document.getElementById('subscriptionRows');
+ for(var i=1;i<=25;i++){
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td>'+i+'</td><td>'+fieldSelect(Array.from({length:25},function(_,n){return 'Élève de test '+(n+1)}),i-1,'select-eleve')+'</td>'+
+  '<td>'+fieldSelect(['Standard','VIP','Partiel'],i%3,'select-formule')+'</td>'+
+  '<td>'+fieldSelect(tarifs.map(function(v){return v.toLocaleString('fr-FR')+' FCFA'}),9,'select-tarif')+'</td>'+
+  '<td>'+fieldSelect(['Aucune','10 %'],0,'select-reduction')+'</td>'+
+  '<td>'+fieldSelect(['À confirmer','En attente de paiement','Confirmé'],i<=3?2:1,'select-statut')+'</td>'+
+  '<td><button class="qr-demo" type="button">Voir QR code</button></td>';
+  body.appendChild(tr);
+ }
+ body.addEventListener('change',function(e){if(e.target.classList.contains('select-statut'))updateQr(e.target.closest('tr'));});
+ Array.prototype.forEach.call(body.rows,updateQr);
+ body.addEventListener('click',function(e){if(e.target.classList.contains('qr-demo'))alert('Aperçu : le badge sera relié à l’identifiant sécurisé de l’élève après validation et vérification des QR existants. Aucun QR réel généré ici.');});
+}
+function updateQr(row){var confirmed=row.querySelector('.select-statut').value==='Confirmé';var btn=row.querySelector('.qr-demo');btn.disabled=!confirmed;btn.textContent=confirmed?'QR disponible':'QR indisponible';}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
