@@ -30,7 +30,30 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef4fb}
        s3.src="g10-circuit-dynamic-v1471.js?v=14717";
        d.body.appendChild(s3);
      };
-     l.style.display="none";
+     // Onglet Abonnement : affichage uniquement, donnees conservees.
+    var tries=0;
+    var subscriptionTimer=setInterval(function(){
+      try{
+        var doc=f.contentDocument;
+        if(!doc) return;
+        var navs=Array.prototype.slice.call(doc.querySelectorAll(".top,nav"));
+        var nav=navs.find(function(n){return Array.prototype.some.call(n.querySelectorAll("button"),function(b){return /^Abonnés$/i.test(b.textContent.trim());});});
+        if(!nav){if(++tries>=40)clearInterval(subscriptionTimer);return;}
+        if(doc.getElementById("g10-abonnement-tab")){clearInterval(subscriptionTimer);return;}
+        var abo=Array.prototype.find.call(nav.querySelectorAll("button"),function(b){return /^Abonnés$/i.test(b.textContent.trim());});
+        var btn=doc.createElement("button");btn.id="g10-abonnement-tab";btn.type="button";btn.textContent="Abonnement";
+        btn.onclick=function(){
+          var old=doc.getElementById("g10-abonnement-preview");
+          if(old){old.remove();return;}
+          var div=doc.createElement("div");div.id="g10-abonnement-preview";
+          div.style.cssText="padding:14px;margin:8px 0;border:1px solid #dce6f0;border-radius:12px;background:#fff;color:#17324f";
+          div.textContent="Abonnement — rubrique en cours de validation. Aucune donnée modifiée.";
+          nav.insertAdjacentElement("afterend",div);
+        };
+        abo.insertAdjacentElement("afterend",btn);clearInterval(subscriptionTimer);
+      }catch(e){clearInterval(subscriptionTimer);}
+    },400);
+    l.style.display="none";
    }catch(e){
      l.textContent="Impossible de charger la V1.47.1 : "+e.message;
    }
