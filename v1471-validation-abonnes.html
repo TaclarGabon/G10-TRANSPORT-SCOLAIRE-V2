@@ -17,7 +17,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .btn.green{background:#11a85f;color:#fff;border:0;border-radius:9px;padding:11px;font-weight:900}
 .table-note{font-size:11px;margin:9px 0}.table-note b{color:#08723e}
 .master-wrap{overflow:auto;max-height:67vh;background:#fff;border:1px solid var(--line);border-radius:12px}
-.master{border-collapse:separate;border-spacing:0;min-width:1150px;width:100%;font-size:10px}
+.master{border-collapse:separate;border-spacing:0;min-width:1050px;width:100%;font-size:10px}
 .master th{position:sticky;top:0;z-index:10;background:#eaf2fa;color:#173b63;text-align:left;padding:11px;border-bottom:1px solid var(--line);white-space:nowrap}
 .master td{padding:11px;border-bottom:1px solid #edf2f6;vertical-align:top}
 .master tbody tr:nth-child(even){background:#fbfdff}
@@ -40,10 +40,10 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 <div class="section-heading">Tableau maître corrigé avec les réponses de Martina — aperçu sans données personnelles.</div>
 <div id="panel">
 <div class="card head"><div><h2>Tableau des abonnés — Zone Akanda</h2><div class="small">Ajouter, corriger ou valider les dossiers abonnés.</div></div><button class="btn green" type="button" onclick="alert('Formulaire non activé dans cet aperçu de validation')">Ajouter un abonné</button></div>
-<div class="table-note"><b>V1.47.1 — Validation visuelle.</b> Même organisation du grand tableau. Déplace la liste vers le bas : les intitulés restent visibles.</div>
-<div class="master-wrap"><table class="master"><thead><tr><th>#</th><th>Enfant</th><th>École</th><th>Classe</th><th>Parent</th><th>Contacts</th><th>Commune / quartier</th><th>Adresse / repère</th><th>Formule</th><th>Tarif</th><th>QR Code</th><th>QR code</th><th>Ramassage matin</th><th>Retour école</th><th>Dépose soir</th><th>Horaires</th><th>Urgence</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="table-note"><b>V1.47.1 — Validation visuelle.</b> Colonnes Abonnés réorganisées selon la validation de Martina. Déplace la liste vers le bas : les intitulés restent visibles.</div>
+<div class="master-wrap"><table class="master"><thead><tr><th>#</th><th>Enfant</th><th>École</th><th>Classe</th><th>Parent / tuteur</th><th>Contacts</th><th>Numéro d’urgence</th><th>Adresse / repère</th><th>Ligne / bus affecté</th></tr></thead><tbody id="rows"></tbody></table></div>
 </div>
 <script>
-var rows=document.getElementById('rows');for(var i=1;i<=25;i++){var tr=document.createElement('tr');tr.innerHTML='<td>'+i+'</td><td>Élève de test '+i+'</td><td>Établissement de test</td><td>6ème</td><td>Parent de test</td><td>—</td><td>—</td><td>Repère de test</td><td>Standard</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>';rows.appendChild(tr)}
+var rows=document.getElementById('rows');for(var i=1;i<=25;i++){var tr=document.createElement('tr');tr.innerHTML='<td>'+i+'</td><td>Élève de test '+i+'</td><td>Établissement de test</td><td>6ème</td><td>Parent de test</td><td>—</td><td>—</td><td>Repère de test</td><td>Bus '+(i%3+1)+'</td>';rows.appendChild(tr)}
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')location.reload();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
