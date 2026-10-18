@@ -26,6 +26,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .master select{width:100%;min-width:135px;padding:8px;border:1px solid #c9d8e6;border-radius:8px;background:#fff;color:#17324f}.master th:nth-child(2){min-width:190px}.qr-demo{border:0;border-radius:9px;padding:9px 11px;background:#176fd1;color:white;font-weight:800;cursor:pointer;white-space:nowrap}.qr-demo:disabled{background:#e9eff5;color:#74889a;cursor:not-allowed}
 .payments-table input{min-width:118px;width:100%;padding:8px;border-radius:8px;border:1px solid #c9d8e6;color:#17324f}.payments-table .payment-month{min-width:150px}.receipt-demo{border:0;border-radius:8px;background:#176fd1;color:white;padding:8px 12px;font-weight:800;white-space:nowrap;cursor:pointer}.payment-summary{margin-top:12px}.payment-summary p{margin:6px 0 0}
 .circuit-zone-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.zone-btn{background:#e1ecf8;color:#173b63;border:1px solid #bdd4eb;padding:12px 16px;border-radius:10px;font-weight:900;cursor:pointer}.zone-btn.selected{background:#176fd1;color:white}.circuit-empty{color:#61768c;text-align:center;padding:22px!important}.circuit-move{border:0;border-radius:7px;background:#176fd1;color:white;padding:7px 10px}#circuitDay{padding:9px;border:1px solid #bdd4eb;border-radius:8px}
+.report-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:10px 0}.report-tiles .card h2{margin:7px 0;color:#123d78}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -199,5 +200,36 @@ function drawCircuit(){
  document.querySelectorAll('.scan-test').forEach(b=>b.onclick=()=>{let tr=b.closest('tr'),expected=+tr.querySelector('.expected').value,n=+(tr.dataset.scanned||0);if(expected>n){n++;tr.dataset.scanned=n;tr.querySelector('.scans').textContent=n+' / '+expected;tr.querySelector('.leave').disabled=n!==expected;}});
  document.querySelectorAll('.leave').forEach(b=>b.onclick=()=>{b.textContent='Complet';b.disabled=true});
 }
-document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
+
+var reportDemoEntries=[
+ {student:'Élève de test 1',date:'2026-10-17',month:'2026-10',due:17500,paid:17500},
+ {student:'Élève de test 2',date:'2026-10-16',month:'2026-10',due:80000,paid:80000},
+ {student:'Élève de test 3',date:'2026-10-15',month:'2026-10',due:65000,paid:40000}
+];
+function capturePaymentDemo(){
+ var rows=document.querySelectorAll('#paymentRows tr');
+ if(!rows.length)return;
+ reportDemoEntries=Array.from(rows).map(function(row){
+  return {student:row.querySelector('.payment-student').value,date:row.querySelector('.payment-date').value,
+   month:row.querySelector('.payment-month').value,due:Number(row.querySelector('.payment-due').value)||0,
+   paid:Number(row.querySelector('.payment-paid').value)||0};
+ });
+}
+function showRapports(){
+ var money=function(n){return n.toLocaleString('fr-FR')+' FCFA'};
+ var total=reportDemoEntries.reduce(function(n,r){return n+r.paid},0);
+ var expected=reportDemoEntries.reduce(function(n,r){return n+r.due},0);
+ var balance=reportDemoEntries.reduce(function(n,r){return n+Math.max(0,r.due-r.paid)},0);
+ var paid=reportDemoEntries.filter(function(r){return r.due>0&&r.paid>=r.due}).length;
+ document.getElementById('panel').innerHTML=
+ '<div class="card head"><div><h2>Rapports — Zone Akanda</h2><div class="small">Synthèse des paiements et suivi des montants à vérifier.</div></div></div>'+
+ '<div class="table-note"><b>Prévisualisation uniquement :</b> ces sommes proviennent des paiements fictifs de la démo, pas de Firebase. Les chiffres réels de Martina devront être rapprochés avant validation.</div>'+
+ '<div class="report-tiles"><div class="card"><div class="small">Montant dû (démo)</div><h2>'+money(expected)+'</h2></div><div class="card"><div class="small">Total encaissé (démo)</div><h2>'+money(total)+'</h2></div><div class="card"><div class="small">Reste à payer (démo)</div><h2>'+money(balance)+'</h2></div><div class="card"><div class="small">Dossiers soldés (démo)</div><h2>'+paid+' / '+reportDemoEntries.length+'</h2></div></div>'+
+ '<div class="card"><h2>Contrôle des écarts</h2><p class="small">Montants relevés lors des échanges avec Martina — comparaison en attente de vérification des écritures :</p>'+
+ '<div class="report-tiles"><div><strong>Ancien rapport : 734 500 FCFA</strong></div><div><strong>Écran Paiements : 864 500 FCFA</strong></div></div>'+
+ '<p>Différence à justifier : <strong>130 000 FCFA</strong>. Il ne faut pas imposer un nouveau total avant le rapprochement des encaissements.</p></div>'+
+ '<div class="card"><h2>Détail des encaissements de démonstration</h2><div class="master-wrap"><table class="master"><thead><tr><th>Élève</th><th>Date</th><th>Mois</th><th>Dû</th><th>Encaissé</th><th>Reliquat</th></tr></thead><tbody>'+
+ reportDemoEntries.map(function(r){return '<tr><td>'+r.student+'</td><td>'+r.date+'</td><td>'+r.month+'</td><td>'+money(r.due)+'</td><td>'+money(r.paid)+'</td><td>'+money(Math.max(0,r.due-r.paid))+'</td></tr>'}).join('')+'</tbody></table></div></div>';
+}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(document.getElementById('paymentRows'))capturePaymentDemo();if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else if(b.dataset.tab==='rapports')showRapports();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
