@@ -33,6 +33,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .driver-form{display:grid;grid-template-columns:1.3fr 1.3fr 1.3fr 1fr 1fr 1.2fr auto;gap:8px;align-items:end}.driver-form label,.driver-item label{font-size:10px;font-weight:800;color:#516b85}.driver-form input,.driver-form select,.driver-item select{display:block;width:100%;background:#fff;border:1px solid #c8d9e8;border-radius:7px;padding:9px 7px;font-size:11px;color:#123d78}.driver-item{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr .5fr auto;gap:12px;align-items:center;background:white;border:1px solid #dce6f0;border-radius:10px;padding:12px;margin:7px 0}.driver-name strong{font-size:13px;color:#123d78}.driver-active{background:#dff7e8;color:#097443;border-radius:12px;padding:5px;font-size:10px;font-weight:800;text-align:center}.driver-off{background:#fce4e4;color:#a22}.driver-actions{display:flex;gap:5px}.driver-actions button{border:0;background:#edf3f8;border-radius:7px;padding:9px;font-weight:800;color:#124575;cursor:pointer}.driver-actions .driver-remove{color:#ae303c}@media(max-width:920px){.driver-form{grid-template-columns:repeat(2,minmax(0,1fr))}.driver-item{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .staff-change-dept{width:100%;min-width:160px;border:1px solid #c8d9e8;border-radius:7px;background:white;padding:8px}.staff-edit,.staff-toggle{background:#edf3f8;border:0;border-radius:7px;color:#124575;padding:8px;font-weight:800;cursor:pointer}.staff-toggle{color:#b33442}
 .staff-original-form{display:grid;grid-template-columns:1fr 1fr 1fr 240px;gap:8px;align-items:end}.staff-original-form label{font-size:10px;font-weight:800;color:#526b82}.staff-original-form input,.staff-original-form select{display:block;width:100%;padding:9px;border:1px solid #cbdbe9;border-radius:7px;background:white}.staff-add{grid-column:1/2}.staff-newdepartment[hidden]{display:none}.staff-dept{padding:12px;margin-bottom:9px}.staff-dept-name{display:block;color:#123d78;font-size:13px;margin-bottom:8px}.staff-member{display:grid;grid-template-columns:1.5fr .9fr auto;gap:10px;align-items:center;min-height:50px}.staff-ident strong{color:#123d78}.staff-buttons{display:flex;gap:5px}.staff-buttons button{border:0;background:#edf3f8;color:#134472;border-radius:7px;padding:8px;font-weight:800;cursor:pointer}@media(max-width:780px){.staff-original-form{grid-template-columns:1fr 1fr}.staff-member{grid-template-columns:1fr auto}}
+.expense-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.expense-metrics strong{display:block;font-size:18px;margin-top:6px;color:#123d78}.expense-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.expense-form label{font-size:11px;font-weight:800;color:#526b82}.expense-form input,.expense-form select,.expense-form textarea{display:block;width:100%;padding:9px;border:1px solid #cbdbe9;border-radius:8px;background:#fff}.expense-wide{grid-column:1/-1}.expense-buttons{display:flex;gap:7px;flex-wrap:wrap}.expense-buttons button{border:0;border-radius:8px;background:#176fd1;color:#fff;padding:9px;font-size:11px;font-weight:800;cursor:pointer}.expense-buttons button:nth-child(2){background:#139861}.expense-item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #dce6f0;padding:13px;border-radius:10px;margin:8px 0}.expense-item p{margin:5px 0}@media(max-width:850px){.expense-form{grid-template-columns:repeat(2,1fr)}.expense-metrics{grid-template-columns:repeat(2,1fr)}.expense-item{display:block}}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -341,5 +342,69 @@ function renderStaff(){
   if(confirm('Supprimer cet employé de la démonstration ?')){staffPeople.splice(+btn.dataset.staffDel,1);renderStaff();}
  });
 }
-document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(document.getElementById('paymentRows'))capturePaymentDemo();if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else if(b.dataset.tab==='rapports')showRapports();else if(b.dataset.tab==='chauffeurs')showChauffeurs();else if(b.dataset.tab==='staff')showStaff();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
+
+let demoExpenses=[
+ {id:1,type:'Carburant',date:'2026-10-12',supplier:'Station TEST',bill:'TEST-001',km:75819,litres:59.5,amount:35000,note:'',photo:'',status:'review',hidden:false,bus:'Bus 1',recordedBy:'Administration'},
+ {id:2,type:'Lavage',date:'2026-10-09',supplier:'Lavage TEST',bill:'TEST-002',km:4200,litres:0,amount:5000,note:'',photo:'',status:'confirmed',hidden:false,bus:'Bus 2',recordedBy:'Administration'},
+ {id:3,type:'Autre dépense transport',date:'2026-10-08',supplier:'Prestataire TEST',bill:'',km:0,litres:0,amount:20000,note:'Frais de mission — test',photo:'',status:'review',hidden:false,bus:'Bus 3',recordedBy:'Administration'}
+];
+let expenseNextId=4,editingExpenseId=null;
+function expenseEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])}
+function expenseMoney(n){return (Number(n)||0).toLocaleString('fr-FR')+' FCFA'}
+function expenseTotals(){
+ const visible=demoExpenses.filter(x=>!x.hidden),confirmed=demoExpenses.filter(x=>x.status==='confirmed');
+ return {review:visible.filter(x=>x.status==='review').length,fuel:confirmed.filter(x=>x.type==='Carburant').reduce((n,x)=>n+x.amount,0),litres:confirmed.filter(x=>x.type==='Carburant').reduce((n,x)=>n+x.litres,0),wash:confirmed.filter(x=>x.type==='Lavage').reduce((n,x)=>n+x.amount,0),total:confirmed.reduce((n,x)=>n+x.amount,0)};
+}
+function showDepenses(){
+ document.getElementById('panel').innerHTML=
+ '<div class="card head"><div><h2>Dépenses véhicules — Zone Akanda</h2><div class="small">La secrétaire peut saisir un reçu reçu par WhatsApp lorsque le chauffeur ne peut pas le joindre.</div></div></div>'+
+ '<div class="expense-metrics"><div class="card"><div class="small">Carburant</div><strong id="fuelTotal">—</strong></div><div class="card"><div class="small">Litres enregistrés</div><strong id="fuelLitres">—</strong></div><div class="card"><div class="small">Lavage</div><strong id="washTotal">—</strong></div><div class="card"><div class="small">Total dépenses confirmées</div><strong id="expenseTotal">—</strong></div></div>'+
+ '<div class="notice" id="expenseNotice"></div>'+
+ '<div class="card"><h2>Nouvelle dépense véhicule</h2><form class="expense-form" id="expenseForm">'+
+ '<label>Type<select name="type"><option>Carburant</option><option>Lavage</option><option>Autre dépense transport</option></select></label>'+
+ '<label>Bus / Zone<select name="bus"><option>Bus 1 — Akanda</option><option>Bus 2 — Inter-Akanda</option><option>Bus 3 — Owendo</option></select></label>'+
+ '<label>N° facture / reçu (optionnel)<input name="bill" placeholder="Ex. FAC-004582"></label>'+
+ '<label>Date facture / reçu<input type="date" name="date"></label>'+
+ '<label>Odomètre (km)<input type="number" name="km" min="0"></label>'+
+ '<label>Litres<input type="number" name="litres" min="0" step=".1"></label>'+
+ '<label>Montant FCFA<input type="number" name="amount" min="0" required></label>'+
+ '<label>Station / lavage / fournisseur<input name="supplier" placeholder="Nom du lieu"></label>'+
+ '<label>Saisi par — Administration<input value="Martina BIFFOT KENGA (démo)" disabled></label>'+
+ '<label>Photo du reçu<input type="file" name="photo" accept="image/*,.pdf"></label>'+
+ '<label class="expense-wide">Note<textarea name="note" rows="2" placeholder="Optionnel"></textarea></label>'+
+ '<div class="expense-wide expense-buttons"><button type="button" id="saveReview">Enregistrer à vérifier</button><button type="button" id="saveConfirmed">Enregistrer & confirmer → Archive</button><button type="button" id="cancelExpenseEdit" hidden>Annuler modification</button></div></form>'+
+ '<p class="small">Traçabilité : une correction modifie la dépense existante. Retirer de la page ne doit jamais retirer une dépense confirmée des rapports.</p></div>'+
+ '<div class="card"><h2>À vérifier</h2><div id="reviewExpenseList"></div></div>'+
+ '<div class="card"><h2>Historique actif — confirmé</h2><div id="confirmedExpenseList"></div></div>'+
+ '<p class="table-note"><b>Simulation sans Firebase.</b> Les trois exemples sont fictifs. Aucune image ni écriture réelle n’est envoyée ou conservée après rechargement de la page.</p>';
+ const form=document.getElementById('expenseForm');
+ const write=(status)=>{
+  if(!form.reportValidity())return;
+  const fd=new FormData(form),file=form.elements.photo.files[0];
+  const value={type:fd.get('type'),bus:String(fd.get('bus')).split(' — ')[0],bill:String(fd.get('bill')||''),date:String(fd.get('date')||''),km:Number(fd.get('km'))||0,litres:Number(fd.get('litres'))||0,amount:Number(fd.get('amount'))||0,supplier:String(fd.get('supplier')||''),note:String(fd.get('note')||''),photo:file?file.name:'',recordedBy:'Administration',status,hidden:false};
+  if(editingExpenseId!==null){let old=demoExpenses.find(x=>x.id===editingExpenseId);Object.assign(old,value);}
+  else demoExpenses.unshift(Object.assign({id:expenseNextId++},value));
+  editingExpenseId=null;form.reset();document.getElementById('cancelExpenseEdit').hidden=true;renderExpenses();
+ };
+ document.getElementById('saveReview').onclick=()=>write('review');
+ document.getElementById('saveConfirmed').onclick=()=>write('confirmed');
+ document.getElementById('cancelExpenseEdit').onclick=()=>{editingExpenseId=null;form.reset();document.getElementById('cancelExpenseEdit').hidden=true};
+ renderExpenses();
+}
+function renderExpenses(){
+ const t=expenseTotals();
+ document.getElementById('fuelTotal').textContent=expenseMoney(t.fuel);
+ document.getElementById('fuelLitres').textContent=t.litres.toFixed(1)+' L';
+ document.getElementById('washTotal').textContent=expenseMoney(t.wash);
+ document.getElementById('expenseTotal').textContent=expenseMoney(t.total);
+ document.getElementById('expenseNotice').textContent=t.review+' dépense(s) à vérifier. Seule l’Administration confirme les dépenses.';
+ const card=x=>'<div class="expense-item"><div><strong>'+expenseEsc(x.date||'Date non renseignée')+' — '+expenseEsc(x.type)+'</strong><p class="small">'+expenseEsc(x.supplier)+' · '+expenseEsc(x.bus)+' · Facture : '+expenseEsc(x.bill||'—')+'</p><p class="small">'+x.km.toLocaleString('fr-FR')+' km · '+x.litres.toFixed(1)+' L · <b>'+expenseMoney(x.amount)+'</b> · '+(x.photo?'Fichier : '+expenseEsc(x.photo):'Pas de reçu')+'</p>'+ (x.note?'<p class="small">'+expenseEsc(x.note)+'</p>':'')+'</div><div class="expense-buttons"><button data-expedit="'+x.id+'">Modifier</button> '+(x.status==='review'?'<button data-expconfirm="'+x.id+'">Confirmer → Archive</button><button data-expcancel="'+x.id+'">Annuler la saisie</button>':'<button data-exphide="'+x.id+'">Retirer de la page</button>')+'</div></div>';
+ document.getElementById('reviewExpenseList').innerHTML=demoExpenses.filter(x=>x.status==='review'&&!x.hidden).map(card).join('')||'<p class="small">Aucune dépense en attente.</p>';
+ document.getElementById('confirmedExpenseList').innerHTML=demoExpenses.filter(x=>x.status==='confirmed'&&!x.hidden).map(card).join('')||'<p class="small">Aucune dépense confirmée affichée.</p>';
+ document.querySelectorAll('[data-expedit]').forEach(b=>b.onclick=()=>{let x=demoExpenses.find(e=>e.id===+b.dataset.expedit),form=document.getElementById('expenseForm');editingExpenseId=x.id;for(let k of ['type','bill','date','km','litres','amount','supplier','note'])form.elements[k].value=x[k];form.elements.bus.value=['Bus 1 — Akanda','Bus 2 — Inter-Akanda','Bus 3 — Owendo'].find(v=>v.startsWith(x.bus));document.getElementById('cancelExpenseEdit').hidden=false;form.scrollIntoView({behavior:'smooth'});});
+ document.querySelectorAll('[data-expconfirm]').forEach(b=>b.onclick=()=>{if(!confirm('Confirmer cette dépense fictive ?'))return;demoExpenses.find(x=>x.id===+b.dataset.expconfirm).status='confirmed';renderExpenses()});
+ document.querySelectorAll('[data-expcancel]').forEach(b=>b.onclick=()=>{if(!confirm('Annuler cette saisie fictive non confirmée ?'))return;demoExpenses=demoExpenses.filter(x=>x.id!==+b.dataset.expcancel);renderExpenses()});
+ document.querySelectorAll('[data-exphide]').forEach(b=>b.onclick=()=>{demoExpenses.find(x=>x.id===+b.dataset.exphide).hidden=true;renderExpenses()});
+}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(document.getElementById('paymentRows'))capturePaymentDemo();if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else if(b.dataset.tab==='rapports')showRapports();else if(b.dataset.tab==='chauffeurs')showChauffeurs();else if(b.dataset.tab==='staff')showStaff();else if(b.dataset.tab==='depenses')showDepenses();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
