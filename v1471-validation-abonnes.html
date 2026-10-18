@@ -32,6 +32,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .report-stats{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:6px!important}.report-stat{min-width:0;padding:10px 9px!important;min-height:78px}.report-stat strong{font-size:clamp(12px,1.25vw,18px)!important;overflow-wrap:anywhere}.report-stat .small{font-size:10px}@media(max-width:740px){.report-stats{display:flex!important;overflow-x:auto}.report-stats>.report-stat{flex:0 0 165px}}
 .driver-form{display:grid;grid-template-columns:1.3fr 1.3fr 1.3fr 1fr 1fr 1.2fr auto;gap:8px;align-items:end}.driver-form label,.driver-item label{font-size:10px;font-weight:800;color:#516b85}.driver-form input,.driver-form select,.driver-item select{display:block;width:100%;background:#fff;border:1px solid #c8d9e8;border-radius:7px;padding:9px 7px;font-size:11px;color:#123d78}.driver-item{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr .5fr auto;gap:12px;align-items:center;background:white;border:1px solid #dce6f0;border-radius:10px;padding:12px;margin:7px 0}.driver-name strong{font-size:13px;color:#123d78}.driver-active{background:#dff7e8;color:#097443;border-radius:12px;padding:5px;font-size:10px;font-weight:800;text-align:center}.driver-off{background:#fce4e4;color:#a22}.driver-actions{display:flex;gap:5px}.driver-actions button{border:0;background:#edf3f8;border-radius:7px;padding:9px;font-weight:800;color:#124575;cursor:pointer}.driver-actions .driver-remove{color:#ae303c}@media(max-width:920px){.driver-form{grid-template-columns:repeat(2,minmax(0,1fr))}.driver-item{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .staff-change-dept{width:100%;min-width:160px;border:1px solid #c8d9e8;border-radius:7px;background:white;padding:8px}.staff-edit,.staff-toggle{background:#edf3f8;border:0;border-radius:7px;color:#124575;padding:8px;font-weight:800;cursor:pointer}.staff-toggle{color:#b33442}
+.staff-original-form{display:grid;grid-template-columns:1fr 1fr 1fr 240px;gap:8px;align-items:end}.staff-original-form label{font-size:10px;font-weight:800;color:#526b82}.staff-original-form input,.staff-original-form select{display:block;width:100%;padding:9px;border:1px solid #cbdbe9;border-radius:7px;background:white}.staff-add{grid-column:1/2}.staff-newdepartment[hidden]{display:none}.staff-dept{padding:12px;margin-bottom:9px}.staff-dept-name{display:block;color:#123d78;font-size:13px;margin-bottom:8px}.staff-member{display:grid;grid-template-columns:1.5fr .9fr auto;gap:10px;align-items:center;min-height:50px}.staff-ident strong{color:#123d78}.staff-buttons{display:flex;gap:5px}.staff-buttons button{border:0;background:#edf3f8;color:#134472;border-radius:7px;padding:8px;font-weight:800;cursor:pointer}@media(max-width:780px){.staff-original-form{grid-template-columns:1fr 1fr}.staff-member{grid-template-columns:1fr auto}}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -287,41 +288,58 @@ function renderDrivers(){
  node.querySelectorAll('.driver-edit').forEach(el=>el.onclick=()=>{let d=demoDrivers[+el.dataset.i];const name=prompt('Nom complet',d.name);if(name===null)return;const phone=prompt('Téléphone',d.phone);if(phone===null)return;const plate=prompt('Plaque',d.plate);if(plate===null)return;d.name=name.trim()||d.name;d.phone=phone.trim();d.plate=plate.trim();renderDrivers()});
 }
 
-const staffDepartments=['Administration','Gestion','Direction','Transport','Logistique / Badges'];
+
+const staffDepartments=['Direction','Gestion','Administration','Transport','Logistique / Badges'];
 const staffPeople=[
- {name:'Martina',department:'Administration',role:'Administration',active:true},
- {name:'Gécolia',department:'Gestion',role:'Consultation',active:true},
- {name:'JC',department:'Direction',role:'Direction',active:true}
+ {first:'JC',last:'NZAMBA',phone:'+1 (404) 274-3880',department:'Direction'},
+ {first:'Gécolia',last:'Boulingui',phone:'+241 04 00 01 75',department:'Gestion'},
+ {first:'Martina',last:'BIFFOT KENGA',phone:'+241 07 86 43 97',department:'Administration'}
 ];
 function staffEsc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function showStaff(){
- document.getElementById('panel').innerHTML='<div class="card head"><div><h2>Staff — Équipe G10</h2><div class="small">Employés, départements et affectations.</div></div></div>'+
- '<div class="card"><h2>Ajouter un employé</h2><p class="small">Sélectionne un département existant ou crée un nouveau département.</p><form id="staffForm" class="driver-form">'+
- '<label>Nom et prénom<input name="name" placeholder="Nom complet" required></label>'+
- '<label>Fonction<input name="role" placeholder="Ex. Logistique et flocage des badges" required></label>'+
+ document.getElementById('panel').innerHTML=
+ '<div class="section-heading">Personnel enregistré par département.</div>'+
+ '<div class="card"><h2>Staff</h2><div class="small">Seule l’Administration peut ajouter, modifier ou supprimer un membre.</div>'+
+ '<form id="staffForm" class="staff-original-form">'+
+ '<label>Prénom<input name="first" placeholder="Prénom" required></label>'+
+ '<label>Nom<input name="last" placeholder="Nom" required></label>'+
+ '<label>Téléphone<input name="phone" placeholder="Téléphone"></label>'+
  '<label>Département<select name="department" id="staffDepartment"></select></label>'+
- '<label id="newDepartmentLabel" hidden>Nouveau département<input name="newDepartment" placeholder="Nom du département"></label>'+
- '<button type="submit" class="btn green">Ajouter un employé</button></form></div>'+
- '<div class="card"><h2>Liste du personnel</h2><p class="small">Ajouter, modifier ou désactiver un employé sans effacer son historique.</p><div id="staffList"></div></div>'+
- '<p class="table-note"><b>Démo uniquement.</b> Aucune création de compte ni modification Firebase. La nouvelle responsable des badges reste à identifier.</p>';
- const form=document.getElementById('staffForm');
- function departments(selected){return staffDepartments.map(x=>'<option'+(x===selected?' selected':'')+'>'+staffEsc(x)+'</option>').join('')+'<option value="__new__">+ Créer un département…</option>'}
- const dept=document.getElementById('staffDepartment');dept.innerHTML=departments('Logistique / Badges');
+ '<label id="newDepartmentLabel" class="staff-newdepartment" hidden>Nouveau département<input name="newDepartment" placeholder="Nom du département"></label>'+
+ '<button type="submit" class="btn green staff-add">+ Ajouter</button></form></div>'+
+ '<div id="staffList"></div>'+
+ '<p class="table-note"><b>Démo sans Firebase.</b> Les informations affichées reprennent le modèle transmis. Les modifications ne touchent pas au personnel réel.</p>';
+ const form=document.getElementById('staffForm'),dept=form.elements.department;
+ const options=selected=>staffDepartments.map(v=>'<option'+(selected===v?' selected':'')+'>'+staffEsc(v)+'</option>').join('')+'<option value="__new__">+ Nouveau département…</option>';
+ dept.innerHTML=options('Administration');
  dept.onchange=()=>{document.getElementById('newDepartmentLabel').hidden=dept.value!=='__new__'};
- form.onsubmit=e=>{e.preventDefault();let fd=new FormData(form),dep=fd.get('department');
-  if(dep==='__new__'){dep=String(fd.get('newDepartment')||'').trim();if(!dep){alert('Saisis le nom du nouveau département.');return;}if(!staffDepartments.includes(dep))staffDepartments.push(dep)}
-  staffPeople.push({name:String(fd.get('name')).trim(),role:String(fd.get('role')).trim(),department:dep,active:true});
-  form.reset();dept.innerHTML=departments(dep);dept.value=dep;document.getElementById('newDepartmentLabel').hidden=true;renderStaff();
+ form.onsubmit=e=>{
+  e.preventDefault();const d=new FormData(form);let department=String(d.get('department'));
+  if(department==='__new__'){department=String(d.get('newDepartment')||'').trim();if(!department){alert('Saisis un nom de département.');return;}if(!staffDepartments.includes(department))staffDepartments.push(department);}
+  staffPeople.push({first:String(d.get('first')).trim(),last:String(d.get('last')).trim(),phone:String(d.get('phone')).trim(),department});
+  form.reset();dept.innerHTML=options('Administration');document.getElementById('newDepartmentLabel').hidden=true;renderStaff();
  };
  renderStaff();
 }
 function renderStaff(){
- const target=document.getElementById('staffList');if(!target)return;
- target.innerHTML='<div class="master-wrap"><table class="master"><thead><tr><th>Employé</th><th>Fonction</th><th>Département</th><th>Statut</th><th>Actions</th></tr></thead><tbody>'+
- staffPeople.map((p,i)=>'<tr><td>'+staffEsc(p.name)+'</td><td>'+staffEsc(p.role)+'</td><td><select class="staff-change-dept" data-i="'+i+'">'+staffDepartments.map(d=>'<option'+(p.department===d?' selected':'')+'>'+staffEsc(d)+'</option>').join('')+'</select></td><td>'+(p.active?'Actif':'Inactif')+'</td><td><button class="staff-edit" data-i="'+i+'">Modifier</button> <button class="staff-toggle" data-i="'+i+'">'+(p.active?'Désactiver':'Réactiver')+'</button></td></tr>').join('')+'</tbody></table></div>';
- target.querySelectorAll('.staff-change-dept').forEach(x=>x.onchange=()=>{staffPeople[+x.dataset.i].department=x.value;renderStaff()});
- target.querySelectorAll('.staff-edit').forEach(x=>x.onclick=()=>{let p=staffPeople[+x.dataset.i];let n=prompt('Nom et prénom',p.name);if(n===null)return;let role=prompt('Fonction',p.role);if(role===null)return;p.name=n.trim()||p.name;p.role=role.trim()||p.role;renderStaff()});
- target.querySelectorAll('.staff-toggle').forEach(x=>x.onclick=()=>{let p=staffPeople[+x.dataset.i];if(confirm('Changer le statut de cet employé dans la démo ?')){p.active=!p.active;renderStaff()}});
+ const area=document.getElementById('staffList');if(!area)return;
+ area.innerHTML=staffDepartments.filter(dep=>staffPeople.some(p=>p.department===dep)).map(dep=>
+ '<div class="card staff-dept"><strong class="staff-dept-name">'+staffEsc(dep)+'</strong>'+
+ staffPeople.map((p,i)=>p.department===dep?
+ '<div class="staff-member"><div class="staff-ident"><strong>'+staffEsc(p.first+' '+p.last)+'</strong><div class="small">'+staffEsc(p.phone||'Téléphone non renseigné')+'</div></div>'+
+ '<div>'+staffEsc(p.department)+'</div><div class="staff-buttons"><button data-staff-edit="'+i+'">Modifier</button><button data-staff-del="'+i+'">Supprimer</button></div></div>':'').join('')+'</div>').join('');
+ area.querySelectorAll('[data-staff-edit]').forEach(btn=>btn.onclick=()=>{
+  let p=staffPeople[+btn.dataset.staffEdit],first=prompt('Prénom',p.first);if(first===null)return;
+  let last=prompt('Nom',p.last);if(last===null)return;
+  let phone=prompt('Téléphone',p.phone);if(phone===null)return;
+  let dep=prompt('Département existant ou nouveau',p.department);if(dep===null)return;
+  if(!first.trim()||!last.trim()||!dep.trim()){alert('Prénom, nom et département requis.');return;}
+  if(!staffDepartments.includes(dep.trim()))staffDepartments.push(dep.trim());
+  Object.assign(p,{first:first.trim(),last:last.trim(),phone:phone.trim(),department:dep.trim()});renderStaff();
+ });
+ area.querySelectorAll('[data-staff-del]').forEach(btn=>btn.onclick=()=>{
+  if(confirm('Supprimer cet employé de la démonstration ?')){staffPeople.splice(+btn.dataset.staffDel,1);renderStaff();}
+ });
 }
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(document.getElementById('paymentRows'))capturePaymentDemo();if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else if(b.dataset.tab==='rapports')showRapports();else if(b.dataset.tab==='chauffeurs')showChauffeurs();else if(b.dataset.tab==='staff')showStaff();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
