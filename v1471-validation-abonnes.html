@@ -109,7 +109,7 @@ function showPaiements(){
    '<td><input type="month" class="payment-month" value="'+(data.month||'2026-10')+'"></td>'+
    '<td><input type="number" min="0" step="500" class="payment-due" value="'+(data.due||0)+'"></td>'+
    '<td><input type="number" min="0" step="500" class="payment-paid" value="'+(data.paid||0)+'"></td>'+
-   '<td class="payment-balance"></td><td class="payment-status"></td>'+
+   '<td class="payment-balance"></td><td><select class="payment-status" aria-label="Statut du paiement"><option>En attente</option><option>Avec reliquat</option><option>Soldé</option></select></td>'+
    '<td><button class="receipt-demo" type="button">Voir reçu</button></td>';
   body.appendChild(tr);recalculatePayments();
  }
@@ -122,11 +122,12 @@ function showPaiements(){
    total+=paid;
    var balance=Math.max(0,due-paid);
    row.querySelector('.payment-balance').textContent=balance.toLocaleString('fr-FR')+' FCFA';
-   row.querySelector('.payment-status').textContent=paid>=due&&due>0?'Soldé':paid>0?'Avec reliquat':'En attente';
+   var status=row.querySelector('.payment-status'); if(!status.dataset.manual){status.value=paid>=due&&due>0?'Soldé':paid>0?'Avec reliquat':'En attente';}
   });
   document.getElementById('paymentTotal').textContent=total.toLocaleString('fr-FR')+' FCFA';
  }
  body.addEventListener('input',recalculatePayments);
+ body.addEventListener('change',function(e){if(e.target.classList.contains('payment-status'))e.target.dataset.manual='1';});
  body.addEventListener('click',function(e){
   if(!e.target.classList.contains('receipt-demo'))return;
   var row=e.target.closest('tr'),c=row.cells;
