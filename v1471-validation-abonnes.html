@@ -30,6 +30,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .report-tabs{display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:#fff;border:1px solid #dce6f0;padding:10px;border-radius:12px;margin:10px 0}.report-sub{border:1px solid #c2d5e8;background:#fff;color:#123d78;border-radius:5px;padding:8px 11px;font-weight:850;cursor:pointer}.report-sub.active{background:#176fd1;color:#fff}.report-filters{margin-left:auto;font-size:11px}.report-filters input{border:1px solid #d1dce6;border-radius:6px;padding:6px}.report-filters button{background:#176fd1;color:#fff;border:0;border-radius:6px;padding:7px}.report-stats{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:9px;margin:10px 0}.report-stat{background:#fff;border:2px solid #dae5ee;border-radius:9px;padding:13px}.report-stat strong{display:block;font-size:20px;margin-top:6px}.green-outline{border-color:#17a663}.red-outline{border-color:#ef4750}.blue-outline{border-color:#1676f3}.yellow-outline{border-color:#ffc83d}.report-label{border-radius:5px;padding:3px 8px;font-weight:800}.green-label{background:#dcf7e9;color:#087344}.orange-label{background:#fff1d8;color:#955e00}@media(max-width:700px){.report-stats{grid-template-columns:repeat(2,1fr)}}
 .review-expense{text-align:left;cursor:pointer;font-family:inherit;color:inherit}.review-expense:hover{background:#fff9e6}.review-expense .small{display:block}#reviewExpensesDetails[hidden]{display:none}
 .report-stats{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:6px!important}.report-stat{min-width:0;padding:10px 9px!important;min-height:78px}.report-stat strong{font-size:clamp(12px,1.25vw,18px)!important;overflow-wrap:anywhere}.report-stat .small{font-size:10px}@media(max-width:740px){.report-stats{display:flex!important;overflow-x:auto}.report-stats>.report-stat{flex:0 0 165px}}
+.driver-form{display:grid;grid-template-columns:1.3fr 1.3fr 1.3fr 1fr 1fr 1.2fr auto;gap:8px;align-items:end}.driver-form label,.driver-item label{font-size:10px;font-weight:800;color:#516b85}.driver-form input,.driver-form select,.driver-item select{display:block;width:100%;background:#fff;border:1px solid #c8d9e8;border-radius:7px;padding:9px 7px;font-size:11px;color:#123d78}.driver-item{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr .5fr auto;gap:12px;align-items:center;background:white;border:1px solid #dce6f0;border-radius:10px;padding:12px;margin:7px 0}.driver-name strong{font-size:13px;color:#123d78}.driver-active{background:#dff7e8;color:#097443;border-radius:12px;padding:5px;font-size:10px;font-weight:800;text-align:center}.driver-off{background:#fce4e4;color:#a22}.driver-actions{display:flex;gap:5px}.driver-actions button{border:0;background:#edf3f8;border-radius:7px;padding:9px;font-weight:800;color:#124575;cursor:pointer}.driver-actions .driver-remove{color:#ae303c}@media(max-width:920px){.driver-form{grid-template-columns:repeat(2,minmax(0,1fr))}.driver-item{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -240,12 +241,49 @@ function showRapports(){
  document.getElementById('reportExport').onclick=()=>alert('Démo de validation : export non activé. Aucun rapport officiel généré.');
 }
 
+
+const demoDrivers=[
+ {name:'MBA ONDO EMMANUEL',phone:'066247088',zone:'Akanda',bus:'Bus 1',plate:'MG-084-AA',active:true},
+ {name:'Iwangu Inzambe Edherson',phone:'+241 66 15 60 81',zone:'Inter-Akanda',bus:'Bus 2',plate:'MG-080-AA',active:true},
+ {name:'MIHINDOU MIHINDOU Armel',phone:'076583334',zone:'Owendo',bus:'Bus 3',plate:'MG-085-AA',active:true}
+];
+const zoneBus={'Akanda':'Bus 1','Inter-Akanda':'Bus 2','Owendo':'Bus 3'};
+function driverEscape(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function showChauffeurs(){
- document.getElementById('panel').innerHTML='<div class="card head"><div><h2>Chauffeurs / Contrôleurs logistiques — Zone Akanda</h2><div class="small">Prévisualisation de la rubrique opérationnelle, sans modification des affectations réelles.</div></div></div>'+
- '<div class="table-note"><b>À valider :</b> les chauffeurs restent enregistrés pour l’affectation des bus, et le contrôleur logistique assure la liste de ramassage ainsi que les scans. Aucun compte n’est renommé pour le moment.</div>'+
- '<div class="circuit-zone-tabs">'+lines.map((z,i)=>'<button type="button" class="zone-btn '+(i===0?'selected':'')+'" data-driver-line="'+i+'">'+z[0]+' — '+z[1]+'</button>').join('')+'</div>'+
- '<div class="card"><h2 id="driverHead">Équipe affectée — Akanda / Bus 1</h2><div class="master-wrap"><table class="master"><thead><tr><th>Bus / Zone</th><th>Chauffeur</th><th>Contrôleur logistique</th><th>Scans QR</th><th>Circuit du jour</th></tr></thead><tbody><tr><td id="driverBus">Bus 1 — Akanda</td><td>À renseigner depuis la base</td><td>À affecter</td><td>Contrôleur affecté uniquement</td><td>Liste du bus uniquement</td></tr></tbody></table></div></div>';
- document.querySelectorAll('[data-driver-line]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.driverLine);document.querySelectorAll('[data-driver-line]').forEach(x=>x.classList.toggle('selected',x===b));document.getElementById('driverHead').textContent='Équipe affectée — '+lines[i][0]+' / '+lines[i][1];document.getElementById('driverBus').textContent=lines[i][1]+' — '+lines[i][0];});
+ document.getElementById('panel').innerHTML=
+ '<div class="card head"><div><h2>Chauffeurs — Zone Akanda</h2><div class="small">Nom, prénom, téléphone, zone, bus affecté et immatriculation.</div></div></div>'+
+ '<div class="card"><h2>Ajouter un chauffeur</h2><p class="small">Le chauffeur est enregistré par l’Administration. La zone et le bus sont attribués par menus déroulants.</p>'+
+ '<form id="driverForm" class="driver-form">'+
+ '<label>Nom<input name="last" required placeholder="Nom"></label>'+
+ '<label>Prénom<input name="first" placeholder="Prénom"></label>'+
+ '<label>Téléphone<input name="phone" required placeholder="Téléphone"></label>'+
+ '<label>Zone<select name="zone">'+Object.keys(zoneBus).map(z=>'<option>'+z+'</option>').join('')+'</select></label>'+
+ '<label>Bus affecté<select name="bus"><option>Bus 1</option><option>Bus 2</option><option>Bus 3</option></select></label>'+
+ '<label>Plaque d’immatriculation<input name="plate" placeholder="Ex. MG-084-AA"></label>'+
+ '<button type="submit" class="btn green">Ajouter</button></form></div>'+
+ '<div id="driverList"></div>'+
+ '<p class="table-note"><b>Prévisualisation :</b> les changements sont locaux à cette page de test et ne modifient pas la base de Martina. Aucun compte ni affectation opérationnelle n’est changé.</p>';
+ const form=document.getElementById('driverForm');
+ form.elements.zone.onchange=function(){form.elements.bus.value=zoneBus[this.value]};
+ form.onsubmit=function(e){e.preventDefault();const d=new FormData(form);
+ demoDrivers.push({name:(d.get('last')+' '+d.get('first')).trim(),phone:d.get('phone'),zone:d.get('zone'),bus:d.get('bus'),plate:d.get('plate'),active:true});
+ renderDrivers();form.reset();form.elements.bus.value=zoneBus[form.elements.zone.value];
+ };
+ renderDrivers();
+}
+function renderDrivers(){
+ const node=document.getElementById('driverList');if(!node)return;
+ node.innerHTML=demoDrivers.map((d,i)=>'<div class="driver-item">'+
+ '<div class="driver-name"><strong>'+driverEscape(d.name)+'</strong><div class="small">'+driverEscape(d.phone)+'</div></div>'+
+ '<label>Zone<select class="driver-zone" data-i="'+i+'">'+Object.keys(zoneBus).map(z=>'<option '+(d.zone===z?'selected':'')+'>'+z+'</option>').join('')+'</select></label>'+
+ '<label>Bus affecté<select class="driver-bus" data-i="'+i+'">'+['Bus 1','Bus 2','Bus 3'].map(b=>'<option '+(d.bus===b?'selected':'')+'>'+b+'</option>').join('')+'</select></label>'+
+ '<span>'+driverEscape(d.plate||'—')+'</span>'+
+ '<span class="driver-active '+(d.active?'':'driver-off')+'">'+(d.active?'Actif':'Inactif')+'</span>'+
+ '<div class="driver-actions"><button type="button" class="driver-edit" data-i="'+i+'">Modifier</button><button type="button" class="driver-remove" data-i="'+i+'">'+(d.active?'Désactiver':'Réactiver')+'</button></div></div>').join('');
+ node.querySelectorAll('.driver-zone').forEach(el=>el.onchange=()=>{let d=demoDrivers[+el.dataset.i];d.zone=el.value;d.bus=zoneBus[el.value];renderDrivers()});
+ node.querySelectorAll('.driver-bus').forEach(el=>el.onchange=()=>{let d=demoDrivers[+el.dataset.i];d.bus=el.value;renderDrivers()});
+ node.querySelectorAll('.driver-remove').forEach(el=>el.onclick=()=>{let d=demoDrivers[+el.dataset.i];if(confirm((d.active?'Désactiver':'Réactiver')+' ce chauffeur dans la démo ?')){d.active=!d.active;renderDrivers()}});
+ node.querySelectorAll('.driver-edit').forEach(el=>el.onclick=()=>{let d=demoDrivers[+el.dataset.i];const name=prompt('Nom complet',d.name);if(name===null)return;const phone=prompt('Téléphone',d.phone);if(phone===null)return;const plate=prompt('Plaque',d.plate);if(plate===null)return;d.name=name.trim()||d.name;d.phone=phone.trim();d.plate=plate.trim();renderDrivers()});
 }
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(document.getElementById('paymentRows'))capturePaymentDemo();if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else if(b.dataset.tab==='rapports')showRapports();else if(b.dataset.tab==='chauffeurs')showChauffeurs();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
