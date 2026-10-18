@@ -24,6 +24,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .preview-note{border-left:3px solid #176fd1;padding:10px;background:#fff;font-size:12px;margin-bottom:8px}
 .edit-btn,.clean-btn{border:0;border-radius:9px;color:white;font-size:11px;font-weight:850;padding:9px 12px;cursor:pointer}.edit-btn{background:#176fd1}.clean-btn{background:#e43d50}.master td{white-space:normal;min-width:75px}.master td:nth-child(2){min-width:140px}.master td:nth-child(3){min-width:150px}.master td:nth-child(5){min-width:140px}.master td:nth-child(6),.master td:nth-child(7),.master td:nth-child(8){min-width:130px}
 .master select{width:100%;min-width:135px;padding:8px;border:1px solid #c9d8e6;border-radius:8px;background:#fff;color:#17324f}.master th:nth-child(2){min-width:190px}.qr-demo{border:0;border-radius:9px;padding:9px 11px;background:#176fd1;color:white;font-weight:800;cursor:pointer;white-space:nowrap}.qr-demo:disabled{background:#e9eff5;color:#74889a;cursor:not-allowed}
+.payments-table input{min-width:118px;width:100%;padding:8px;border-radius:8px;border:1px solid #c9d8e6;color:#17324f}.payments-table .payment-month{min-width:150px}.receipt-demo{border:0;border-radius:8px;background:#176fd1;color:white;padding:8px 12px;font-weight:800;white-space:nowrap;cursor:pointer}.payment-summary{margin-top:12px}.payment-summary p{margin:6px 0 0}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -86,5 +87,56 @@ function updateSubscriptionRow(row){
  btn.disabled=!confirmed;
  btn.textContent=confirmed?'Voir QR':'Indisponible';
 }
-document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
+
+function showPaiements(){
+ var p=document.getElementById('panel');
+ p.innerHTML='<div class="card head"><div><h2>Paiements — Zone Akanda</h2><div class="small">Enregistrement par élève et par mois, avec suivi du solde et des reçus.</div></div><button class="btn green" type="button" id="addPaymentDemo">+ Ajouter un paiement</button></div>'+
+ '<div class="table-note"><b>Prévisualisation Martina.</b> Les montants et élèves sont fictifs. Un mois peut être soldé après une réduction exceptionnelle de 50 %. Aucun encaissement réel n’est effectué.</div>'+
+ '<div class="master-wrap"><table class="master payments-table"><thead><tr><th>#</th><th>Élève</th><th>Date</th><th>Mois concerné</th><th>Montant dû</th><th>Montant payé</th><th>Reste à payer</th><th>Statut</th><th>Reçu édité</th></tr></thead><tbody id="paymentRows"></tbody></table></div>'+
+ '<div class="card payment-summary"><strong>Total des paiements affichés (démo) : <span id="paymentTotal">0 FCFA</span></strong><p class="small">Somme des montants encaissés affichés, sans confusion avec les abonnements théoriques.</p></div>';
+ var body=document.getElementById('paymentRows');
+ var examples=[
+  {student:1,date:'2026-10-17',month:'2026-10',due:17500,paid:17500},
+  {student:2,date:'2026-10-16',month:'2026-10',due:80000,paid:80000},
+  {student:3,date:'2026-10-15',month:'2026-10',due:65000,paid:40000}
+ ];
+ function addRow(data){
+  var tr=document.createElement('tr');
+  var students=Array.from({length:25},function(_,i){return 'Élève de test '+(i+1)});
+  tr.innerHTML='<td class="payment-number"></td>'+
+   '<td>'+fieldSelect(students,(data.student||1)-1,'payment-student')+'</td>'+
+   '<td><input type="date" class="payment-date" value="'+(data.date||'2026-10-17')+'"></td>'+
+   '<td><input type="month" class="payment-month" value="'+(data.month||'2026-10')+'"></td>'+
+   '<td><input type="number" min="0" step="500" class="payment-due" value="'+(data.due||0)+'"></td>'+
+   '<td><input type="number" min="0" step="500" class="payment-paid" value="'+(data.paid||0)+'"></td>'+
+   '<td class="payment-balance"></td><td class="payment-status"></td>'+
+   '<td><button class="receipt-demo" type="button">Voir reçu</button></td>';
+  body.appendChild(tr);recalculatePayments();
+ }
+ function recalculatePayments(){
+  var total=0;
+  Array.prototype.forEach.call(body.rows,function(row,i){
+   row.querySelector('.payment-number').textContent=i+1;
+   var due=Math.max(0,Number(row.querySelector('.payment-due').value)||0);
+   var paid=Math.max(0,Number(row.querySelector('.payment-paid').value)||0);
+   total+=paid;
+   var balance=Math.max(0,due-paid);
+   row.querySelector('.payment-balance').textContent=balance.toLocaleString('fr-FR')+' FCFA';
+   row.querySelector('.payment-status').textContent=paid>=due&&due>0?'Soldé':paid>0?'Avec reliquat':'En attente';
+  });
+  document.getElementById('paymentTotal').textContent=total.toLocaleString('fr-FR')+' FCFA';
+ }
+ body.addEventListener('input',recalculatePayments);
+ body.addEventListener('click',function(e){
+  if(!e.target.classList.contains('receipt-demo'))return;
+  var row=e.target.closest('tr'),c=row.cells;
+  alert('APERÇU DE REÇU — NON VALABLE\nÉlève : '+row.querySelector('.payment-student').value+
+   '\nMois : '+row.querySelector('.payment-month').value+
+   '\nMontant encaissé : '+Number(row.querySelector('.payment-paid').value).toLocaleString('fr-FR')+' FCFA'+
+   '\n\nDocument de démonstration seulement.');
+ });
+ document.getElementById('addPaymentDemo').onclick=function(){addRow({student:1,date:'2026-10-17',month:'2026-10',due:0,paid:0});};
+ examples.forEach(addRow);
+}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
