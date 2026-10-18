@@ -35,6 +35,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .staff-original-form{display:grid;grid-template-columns:1fr 1fr 1fr 240px;gap:8px;align-items:end}.staff-original-form label{font-size:10px;font-weight:800;color:#526b82}.staff-original-form input,.staff-original-form select{display:block;width:100%;padding:9px;border:1px solid #cbdbe9;border-radius:7px;background:white}.staff-add{grid-column:1/2}.staff-newdepartment[hidden]{display:none}.staff-dept{padding:12px;margin-bottom:9px}.staff-dept-name{display:block;color:#123d78;font-size:13px;margin-bottom:8px}.staff-member{display:grid;grid-template-columns:1.5fr .9fr auto;gap:10px;align-items:center;min-height:50px}.staff-ident strong{color:#123d78}.staff-buttons{display:flex;gap:5px}.staff-buttons button{border:0;background:#edf3f8;color:#134472;border-radius:7px;padding:8px;font-weight:800;cursor:pointer}@media(max-width:780px){.staff-original-form{grid-template-columns:1fr 1fr}.staff-member{grid-template-columns:1fr auto}}
 .expense-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.expense-metrics strong{display:block;font-size:18px;margin-top:6px;color:#123d78}.expense-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.expense-form label{font-size:11px;font-weight:800;color:#526b82}.expense-form input,.expense-form select,.expense-form textarea{display:block;width:100%;padding:9px;border:1px solid #cbdbe9;border-radius:8px;background:#fff}.expense-wide{grid-column:1/-1}.expense-buttons{display:flex;gap:7px;flex-wrap:wrap}.expense-buttons button{border:0;border-radius:8px;background:#176fd1;color:#fff;padding:9px;font-size:11px;font-weight:800;cursor:pointer}.expense-buttons button:nth-child(2){background:#139861}.expense-item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #dce6f0;padding:13px;border-radius:10px;margin:8px 0}.expense-item p{margin:5px 0}@media(max-width:850px){.expense-form{grid-template-columns:repeat(2,1fr)}.expense-metrics{grid-template-columns:repeat(2,1fr)}.expense-item{display:block}}
 .qr-audit-button{padding:9px;border:0;border-radius:7px;background:#176fd1;color:white;font-weight:800;cursor:pointer}#qrTimeTest{padding:8px;border:1px solid #cbdbe9;border-radius:7px}
+.qr-test-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:end}.qr-test-controls label{display:grid;gap:3px;font-size:11px;font-weight:800}.qr-test-controls select{padding:8px;border:1px solid #cbdbe9;border-radius:7px;max-width:350px}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -802,6 +803,36 @@ function showQrAudit(){
   document.getElementById('qrTimeOutput').textContent=Number.isNaN(d.getTime())?'Date invalide':new Intl.DateTimeFormat('fr-FR',{timeZone:'Africa/Libreville',dateStyle:'medium',timeStyle:'short'}).format(d);
  };
  document.getElementById('qrCheckTime').click();
+ var sim=document.createElement('div');sim.id='qrSimulator';document.getElementById('panel').appendChild(sim);showQrSimulation();
+}
+
+const qrScanSessions=[];
+const qrSteps=[['morning','Montée du matin'],['school','Arrivée à l’école'],['return','Récupération du soir'],['home','Dépose à domicile']];
+function scanTimeGabon(iso){return new Intl.DateTimeFormat('fr-FR',{timeZone:'Africa/Libreville',dateStyle:'short',timeStyle:'medium'}).format(new Date(iso))}
+function showQrSimulation(){
+ const holder=document.getElementById('qrSimulator');
+ if(!holder)return;
+ holder.innerHTML='<div class="card"><h2>Simulation sécurisée des quatre scans</h2><p class="small">Tests locaux uniquement. Aucun QR réel, aucune donnée Firebase et aucune notification parent ne sont modifiés.</p>'+
+ '<div class="qr-test-controls"><label>Élève<select id="qrStudent">'+qrAuditRows.map(r=>'<option value="'+r[0]+'">'+r[1]+' — '+r[0]+'</option>').join('')+'</select></label>'+
+ '<label>Bus<select id="qrBus"><option>Bus 1</option><option>Bus 2</option><option>Bus 3</option></select></label>'+
+ '<label>Étape<select id="qrStep">'+qrSteps.map(r=>'<option value="'+r[0]+'">'+r[1]+'</option>').join('')+'</select></label>'+
+ '<button type="button" id="qrTestScan" class="qr-audit-button">Simuler un scan</button></div>'+
+ '<p id="qrScanMessage" class="small"></p><div class="master-wrap"><table class="master"><thead><tr><th>Élève</th><th>Bus</th><th>Étape</th><th>Date et heure Libreville</th></tr></thead><tbody id="qrScanResults"></tbody></table></div></div>';
+ document.getElementById('qrTestScan').onclick=function(){
+  const id=document.getElementById('qrStudent').value,bus=document.getElementById('qrBus').value,step=document.getElementById('qrStep').value;
+  const now=new Date().toISOString(),day=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Libreville',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now));
+  const key=[id,bus,step,day].join('|');
+  if(qrScanSessions.some(e=>e.key===key)){document.getElementById('qrScanMessage').textContent='Scan en double pour cette étape, ce jour et ce bus : aucun nouvel événement ajouté.';return}
+  const pupil=qrAuditRows.find(x=>x[0]===id);
+  qrScanSessions.push({key,id,bus,step,iso:now,pupil:pupil[1]});
+  document.getElementById('qrScanMessage').textContent='Événement de test ajouté à '+scanTimeGabon(now)+'.';
+  drawQrScanResults();
+ };
+ drawQrScanResults();
+}
+function drawQrScanResults(){
+ const tbody=document.getElementById('qrScanResults');if(!tbody)return;
+ tbody.innerHTML=qrScanSessions.map(e=>'<tr><td>'+e.pupil+'</td><td>'+e.bus+'</td><td>'+qrSteps.find(x=>x[0]===e.step)[1]+'</td><td>'+scanTimeGabon(e.iso)+'</td></tr>').join('');
 }
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(document.getElementById('paymentRows'))capturePaymentDemo();if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else if(b.dataset.tab==='rapports')showRapports();else if(b.dataset.tab==='chauffeurs')showChauffeurs();else if(b.dataset.tab==='staff')showStaff();else if(b.dataset.tab==='depenses')showDepenses();else if(b.dataset.tab==='qr')showQrAudit();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
