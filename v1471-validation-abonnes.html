@@ -169,5 +169,35 @@ function showSchoolCircuit(zone,day){
  var b=document.getElementById('schoolCircuit');if(!b)return;
  b.innerHTML=data.length?data.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+circuitEsc(r.school)+'</td><td>'+circuitEsc(r.time)+'</td><td>'+r.count+'</td><td>'+circuitEsc(circuitZones.find(function(z){return z.code===zone}).bus)+'</td></tr>'}).join(''):'<tr><td colspan="5" class="circuit-empty">Aucune sortie renseignée pour '+day+' dans ce bus : horaire non inventé.</td></tr>';
 }
-document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')showCircuit();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
+
+const demoRoutes={};
+const lines=[['Akanda','Bus 1'],['Inter-Akanda','Bus 2'],['Owendo','Bus 3']];
+const pdfCalendar={
+ Lundi:[['12:00','Prytanée Cité des Ailes','5 ans'],['13:30','Lycée Privé MBÉLÉ','6ème F1 / 3ème G'],['13:40','Collège Calasanz','6ème'],['14:30','Petite Étoile','2ème année'],['15:00','Prytanée Cité des Ailes','2ème année B'],['15:15','Bambino Village','Toutes classes'],['15:20','Lycée Scientifique','2nde LE'],['15:30','Lycée Scientifique','3ème'],['17:00','Prytanée Militaire - Stade','Tous']],
+ Mardi:null,
+ Mercredi:[['12:00','Lycée Scientifique','2nde LE'],['12:00','Prytanée Cité des Ailes','5 ans / 2ème année B'],['12:00','Petite Étoile','2ème année'],['13:30','Lycée Privé MBÉLÉ','6ème F1 / 3ème G'],['14:30','Collège Calasanz','6ème'],['15:15','Bambino Village','Toutes classes'],['15:30','Lycée Scientifique','3ème'],['17:00','Prytanée Militaire - Stade','Tous']],
+ Jeudi:[['12:00','Lycée Scientifique','2nde LE'],['12:00','Prytanée Cité des Ailes','5 ans'],['13:30','Lycée Privé MBÉLÉ','6ème F1 / 3ème G'],['14:30','Collège Calasanz','6ème'],['14:30','Petite Étoile','2ème année'],['15:00','Prytanée Cité des Ailes','2ème année B'],['15:30','Lycée Scientifique','3ème'],['16:00','Bambino Village','Toutes classes'],['17:00','Prytanée Militaire - Stade','Tous']],
+ Vendredi:[['12:00','Prytanée Cité des Ailes','5 ans'],['12:30','Lycée Privé MBÉLÉ','6ème F1 / 3ème G'],['13:30','Lycée Scientifique','3ème'],['14:30','Collège Calasanz','6ème'],['14:30','Petite Étoile','2ème année'],['15:00','Prytanée Cité des Ailes','2ème année B'],['15:20','Lycée Scientifique','2nde LE'],['16:00','Bambino Village','Toutes classes'],['17:00','Prytanée Militaire - Stade','Tous']],
+ Samedi:[['11:30','Lycée Scientifique','3ème'],['12:00','Lycée Scientifique','2nde LE'],['13:00','Prytanée Militaire - Stade','Tous'],['13:30','Lycée Privé MBÉLÉ','3ème G']]
+};
+pdfCalendar.Mardi=pdfCalendar.Lundi;
+let circuitLine=0,circuitDay='Lundi';
+function drawCircuit(){
+ const line=lines[circuitLine],bus=circuitLine+1,key='bus'+bus;
+ if(!demoRoutes[key])demoRoutes[key]=Array.from({length:25},(_,i)=>i+1).filter(i=>i%3+1===bus);
+ const pupils=demoRoutes[key];
+ const rows=pupils.map((n,i)=>'<tr><td>'+(i+1)+'</td><td>Élève de test '+n+'</td><td>Adresse de test '+n+'</td><td>'+line[1]+'</td><td><button class="move-route" data-i="'+i+'" data-d="-1">↑</button> <button class="move-route" data-i="'+i+'" data-d="1">↓</button></td></tr>').join('');
+ let schedule='<tr><td colspan="7">Pas de calendrier confirmé pour ce bus.</td></tr>';
+ if(circuitLine===1)schedule=(pdfCalendar[circuitDay]||[]).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><input type="number" min="0" class="expected" data-i="'+i+'" value="0" style="width:60px"></td><td class="scans" data-i="'+i+'">0 / 0</td><td><button class="scan-test" data-i="'+i+'">Scanner (test)</button> <button class="leave" data-i="'+i+'" disabled>Départ</button></td></tr>').join('');
+ document.getElementById('panel').innerHTML='<div class="card"><h2>Circuits par ligne de bus</h2><div class="circuit-zone-tabs">'+lines.map((l,i)=>'<button class="zone-btn '+(i===circuitLine?'selected':'')+'" data-line="'+i+'">'+l[0]+' — '+l[1]+'</button>').join('')+'</div></div>'+
+ '<div class="card"><h2>Ramassage du matin — '+line[0]+'</h2><p class="small">Élèves filtrés sur leur Bus affecté dans la démo Abonnés. Modifier l’ordre avec les flèches ↑ ↓.</p><div class="master-wrap"><table class="master"><thead><tr><th>Ordre</th><th>Enfant</th><th>Adresse / repère</th><th>Ligne</th><th>Ordre ↑ ↓</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+ '<div class="card"><h2>Retour — sorties des écoles</h2><label>Jour : <select id="routeDay">'+Object.keys(pdfCalendar).map(d=>'<option '+(d===circuitDay?'selected':'')+'>'+d+'</option>').join('')+'</select></label><p class="small">'+(circuitLine===1?'PDF « LIGNE AKANDA » affiché PROVISOIREMENT sur Bus 2, attribution à confirmer par Martina. Les quantités ci-dessous sont des tests, non des scans réels.':'En attente du calendrier réel pour '+line[1])+ '</p><div class="master-wrap"><table class="master"><thead><tr><th>Ordre</th><th>Heure</th><th>École</th><th>Classe</th><th>Attendus</th><th>Scans</th><th>Contrôle</th></tr></thead><tbody>'+schedule+'</tbody></table></div></div>';
+ document.querySelectorAll('[data-line]').forEach(b=>b.onclick=()=>{circuitLine=+b.dataset.line;drawCircuit()});
+ document.querySelectorAll('.move-route').forEach(b=>b.onclick=()=>{let i=+b.dataset.i,j=i+(+b.dataset.d);if(j<0||j>=pupils.length)return;[pupils[i],pupils[j]]=[pupils[j],pupils[i]];drawCircuit()});
+ document.getElementById('routeDay').onchange=e=>{circuitDay=e.target.value;drawCircuit()};
+ document.querySelectorAll('.expected').forEach(x=>x.onchange=()=>{let tr=x.closest('tr');tr.dataset.scanned=0;tr.querySelector('.scans').textContent='0 / '+Math.max(0,+x.value);tr.querySelector('.leave').disabled=true});
+ document.querySelectorAll('.scan-test').forEach(b=>b.onclick=()=>{let tr=b.closest('tr'),expected=+tr.querySelector('.expected').value,n=+(tr.dataset.scanned||0);if(expected>n){n++;tr.dataset.scanned=n;tr.querySelector('.scans').textContent=n+' / '+expected;tr.querySelector('.leave').disabled=n!==expected;}});
+ document.querySelectorAll('.leave').forEach(b=>b.onclick=()=>{b.textContent='Complet';b.disabled=true});
+}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')drawCircuit();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
