@@ -349,7 +349,7 @@ let demoExpenses=[
  {id:3,type:'Autre dépense transport',date:'2026-10-08',supplier:'Prestataire TEST',bill:'',km:0,litres:0,amount:20000,note:'Frais de mission — test',photo:'',status:'review',hidden:false,bus:'Bus 3',recordedBy:'Administration'}
 ];
 let expenseNextId=4,editingExpenseId=null;
-function expenseEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])}
+function expenseEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function expenseMoney(n){return (Number(n)||0).toLocaleString('fr-FR')+' FCFA'}
 function expenseTotals(){
  const visible=demoExpenses.filter(x=>!x.hidden),confirmed=demoExpenses.filter(x=>x.status==='confirmed');
