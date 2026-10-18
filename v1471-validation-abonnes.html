@@ -25,6 +25,7 @@ body{margin:0;padding:7px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI
 .edit-btn,.clean-btn{border:0;border-radius:9px;color:white;font-size:11px;font-weight:850;padding:9px 12px;cursor:pointer}.edit-btn{background:#176fd1}.clean-btn{background:#e43d50}.master td{white-space:normal;min-width:75px}.master td:nth-child(2){min-width:140px}.master td:nth-child(3){min-width:150px}.master td:nth-child(5){min-width:140px}.master td:nth-child(6),.master td:nth-child(7),.master td:nth-child(8){min-width:130px}
 .master select{width:100%;min-width:135px;padding:8px;border:1px solid #c9d8e6;border-radius:8px;background:#fff;color:#17324f}.master th:nth-child(2){min-width:190px}.qr-demo{border:0;border-radius:9px;padding:9px 11px;background:#176fd1;color:white;font-weight:800;cursor:pointer;white-space:nowrap}.qr-demo:disabled{background:#e9eff5;color:#74889a;cursor:not-allowed}
 .payments-table input{min-width:118px;width:100%;padding:8px;border-radius:8px;border:1px solid #c9d8e6;color:#17324f}.payments-table .payment-month{min-width:150px}.receipt-demo{border:0;border-radius:8px;background:#176fd1;color:white;padding:8px 12px;font-weight:800;white-space:nowrap;cursor:pointer}.payment-summary{margin-top:12px}.payment-summary p{margin:6px 0 0}
+.circuit-zone-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.zone-btn{background:#e1ecf8;color:#173b63;border:1px solid #bdd4eb;padding:12px 16px;border-radius:10px;font-weight:900;cursor:pointer}.zone-btn.selected{background:#176fd1;color:white}.circuit-empty{color:#61768c;text-align:center;padding:22px!important}.circuit-move{border:0;border-radius:7px;background:#176fd1;color:white;padding:7px 10px}#circuitDay{padding:9px;border:1px solid #bdd4eb;border-radius:8px}
 </style></head><body>
 <div class="space-titlebar"><div><div class="space-title-kicker">G10 TRANSPORT SCOLAIRE — ZONE AKANDA</div><div class="space-title-text">ADMINISTRATION — Liste des abonnés</div></div><div><button type="button" onclick="alert('Aperçu de validation uniquement')">Accueil</button></div></div>
 <nav class="top" id="tabs">
@@ -139,5 +140,34 @@ function showPaiements(){
  document.getElementById('addPaymentDemo').onclick=function(){addRow({student:1,date:'2026-10-17',month:'2026-10',due:0,paid:0});};
  examples.forEach(addRow);
 }
-document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
+
+const circuitZones=[
+ {zone:'Akanda',bus:'Bus 1',code:'akanda'},
+ {zone:'Inter-Akanda',bus:'Bus 2',code:'inter-akanda'},
+ {zone:'Owendo',bus:'Bus 3',code:'owendo'}
+];
+const circuitDemo={};
+circuitZones.forEach(function(z){circuitDemo[z.code]={morning:[],schools:[]};});
+function circuitEsc(v){return String(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function showCircuit(zone){
+ zone=zone||'akanda';
+ var z=circuitZones.find(function(x){return x.code===zone})||circuitZones[0];
+ var records=circuitDemo[z.code];
+ var html='<div class="card head"><div><h2>Circuit — '+z.zone+' ('+z.bus+')</h2><div class="small">Chaque zone et chaque bus possèdent leur propre circuit.</div></div></div>'+
+ '<div class="table-note"><b>Validation de présentation uniquement.</b> Les circuits sont vides tant que les élèves, écoles, horaires par jour et affectations réelles ne sont pas reliés. Aucun ordre n’est inventé.</div>'+
+ '<div class="circuit-zone-tabs">'+circuitZones.map(function(x){return '<button type="button" class="zone-btn'+(x.code===z.code?' selected':'')+'" data-zone="'+x.code+'">'+x.zone+' — '+x.bus+'</button>'}).join('')+'</div>'+
+ '<div class="card"><h2>1. Ramassage du matin — domicile vers écoles</h2><p class="small">Du premier enfant ramassé au dernier, uniquement pour '+z.bus+'.</p>'+
+ '<div class="master-wrap"><table class="master"><thead><tr><th>Ordre</th><th>Élève</th><th>Adresse / repère</th><th>Bus affecté</th><th>Action</th></tr></thead><tbody id="morningCircuit">'+(records.morning.length?records.morning.map(function(x,i){return '<tr><td>'+(i+1)+'</td><td>'+circuitEsc(x.child)+'</td><td>'+circuitEsc(x.address)+'</td><td>'+z.bus+'</td><td><button class="circuit-move" data-kind="morning" data-i="'+i+'">↑ Monter</button></td></tr>'}).join(''):'<tr><td colspan="5" class="circuit-empty">Ordre à renseigner depuis les abonnés affectés à ce bus.</td></tr>')+'</tbody></table></div></div>'+
+ '<div class="card"><div class="head"><div><h2>2. Retour — écoles à récupérer</h2><p class="small">De la première école à la dernière, selon le jour, l’heure de sortie et la ligne '+z.bus+'.</p></div><div><label for="circuitDay">Jour :</label><select id="circuitDay">'+['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'].map(function(d){return '<option>'+d+'</option>'}).join('')+'</select></div></div>'+
+ '<div class="master-wrap"><table class="master"><thead><tr><th>Ordre</th><th>École</th><th>Heure de sortie</th><th>Enfants attendus</th><th>Bus affecté</th></tr></thead><tbody id="schoolCircuit"><tr><td colspan="5" class="circuit-empty">Aucune sortie renseignée pour ce jour et ce bus dans la démonstration.</td></tr></tbody></table></div></div>';
+ document.getElementById('panel').innerHTML=html;
+ document.querySelectorAll('.zone-btn').forEach(function(b){b.onclick=function(){showCircuit(b.dataset.zone)}});
+ document.getElementById('circuitDay').onchange=function(){showSchoolCircuit(z.code,this.value)};
+}
+function showSchoolCircuit(zone,day){
+ var data=(circuitDemo[zone].schools||[]).filter(function(r){return r.day===day}).sort(function(a,b){return a.time.localeCompare(b.time)});
+ var b=document.getElementById('schoolCircuit');if(!b)return;
+ b.innerHTML=data.length?data.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+circuitEsc(r.school)+'</td><td>'+circuitEsc(r.time)+'</td><td>'+r.count+'</td><td>'+circuitEsc(circuitZones.find(function(z){return z.code===zone}).bus)+'</td></tr>'}).join(''):'<tr><td colspan="5" class="circuit-empty">Aucune sortie renseignée pour '+day+' dans ce bus : horaire non inventé.</td></tr>';
+}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button[data-tab]');if(!b)return;document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});if(b.dataset.tab==='abonnes')document.getElementById('panel').innerHTML=abonnesMarkup;else if(b.dataset.tab==='abonnement')showAbonnement();else if(b.dataset.tab==='paiements')showPaiements();else if(b.dataset.tab==='circuit')showCircuit();else document.getElementById('panel').innerHTML='<div class="card"><h2>'+b.textContent+'</h2><p>Rubrique en attente de validation. Les données de Martina ne sont pas modifiées.</p></div>'});
 </script></body></html>
