@@ -9,7 +9,9 @@
   function load(src, id) {
     return new Promise((resolve,reject)=>{
       const old=document.getElementById(id);
-      if (old) { if (old.dataset.ready==='1') resolve(); else old.addEventListener('load',resolve,{once:true}); return; }
+      if (id==='g10-v161-qr-lib' && global.QRCode) { resolve(); return; }
+      if (id==='g10-v161-pdf-lib' && global.jspdf?.jsPDF) { resolve(); return; }
+      if (old) { if (old.dataset.ready==='1') resolve(); else {old.addEventListener('load',resolve,{once:true});old.addEventListener('error',()=>reject(new Error('Bibliothèque inaccessible.')),{once:true});} return; }
       const script=document.createElement('script');script.id=id;script.src=src;script.crossOrigin='anonymous';
       script.onload=()=>{script.dataset.ready='1';resolve();};
       script.onerror=()=>reject(new Error('Bibliothèque PDF ou QR inaccessible : vérifier la connexion Internet.'));
@@ -80,7 +82,7 @@
     if(data.skipped && !global.confirm(data.skipped+' dossier(s) sans QR valide seront exclus. Continuer avec '+data.ready.length+' badges ?'))return;
     running=true;
     try {
-      await Promise.all([load(QR_LIB,'g10-v161-qr-lib'),load(PDF_LIB,'g10-v161-pdf-lib')]);
+      await Promise.all([global.QRCode ? Promise.resolve() : load(QR_LIB,'g10-v161-qr-lib'),global.jspdf?.jsPDF ? Promise.resolve() : load(PDF_LIB,'g10-v161-pdf-lib')]);
       const doc=new global.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
       data.ready.forEach((row,i)=>{if(i && i%4===0)doc.addPage();draw(doc,row,i);});
       doc.save('G10-badges-QR-'+new Date().toISOString().slice(0,10)+'.pdf');
