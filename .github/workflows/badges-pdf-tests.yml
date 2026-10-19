@@ -1,0 +1,24 @@
+name: Vérification export PDF badges
+
+on:
+  pull_request:
+    paths:
+      - 'g10-badges-pdf-v1471.js'
+      - 'tests/g10-badges-pdf.test.cjs'
+      - '.github/workflows/badges-pdf-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check g10-badges-pdf-v1471.js
+      - run: node --test tests/g10-badges-pdf.test.cjs
