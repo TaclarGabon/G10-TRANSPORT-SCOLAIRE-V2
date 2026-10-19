@@ -1,0 +1,20 @@
+name: V2 facture — tests anti-double clic
+on:
+  pull_request:
+    paths:
+      - 'correctifs/g10-expense-guard-v1.js'
+      - 'tests/g10-expense-guard.test.cjs'
+      - '.github/workflows/expense-guard-check.yml'
+permissions:
+  contents: read
+jobs:
+  test-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check correctifs/g10-expense-guard-v1.js
+      - run: node --test tests/g10-expense-guard.test.cjs
