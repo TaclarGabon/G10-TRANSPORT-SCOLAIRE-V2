@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>G10 — Export PDF de tous les badges (lecture seule)</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#163a5c;background:#edf4fa}
+*{box-sizing:border-box}body{margin:0}.toolbar{max-width:980px;margin:20px auto;padding:18px;background:white;border-radius:14px}
+h1{font-size:23px;margin:0 0 8px}.muted{color:#536c80;font-size:13px}
+form{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0}input{font:inherit;padding:10px;border:1px solid #b7c9d9;border-radius:8px;min-width:220px}
+button{border:0;border-radius:8px;padding:11px 16px;font-weight:bold;background:#1460aa;color:#fff;cursor:pointer}
+button:disabled{background:#a6b3bf;cursor:not-allowed}#logout{background:#6c7983}
+.sheet{width:190mm;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5mm;padding:5mm}
+.badge{background:#fff;border:2px solid #efc536;border-radius:12px;break-inside:avoid;page-break-inside:avoid;overflow:hidden;min-height:58mm}
+.badge-top{background:#e7f6ff;border-bottom:4px solid #efc536;padding:8px 12px}
+.logo{font-size:21px;font-weight:900;color:#103c70}.logo em{color:#098654;font-style:normal}
+.sub{font-size:9px;font-weight:700;letter-spacing:.5px}
+.badge-main{display:grid;grid-template-columns:1fr 95px;gap:6px;align-items:center;padding:10px}
+.name{font-size:15px;font-weight:900;overflow-wrap:anywhere}.school{font-size:11px;margin-top:7px}
+.qr{width:90px;height:90px;display:flex;align-items:center;justify-content:center}.qr img,.qr canvas{width:90px!important;height:90px!important}
+.ref{text-align:center;font-weight:800;color:#0b8751;font-size:11px;padding:0 4px 9px}
+#message{font-size:13px;margin:12px 0;white-space:pre-wrap}
+@page{size:A4 portrait;margin:8mm}
+@media print{
+:root{background:#fff}body{margin:0}.toolbar{display:none!important}
+.sheet{width:194mm;max-width:none;margin:0;padding:0;gap:4mm;grid-template-columns:repeat(2,1fr)}
+.badge{height:57mm;min-height:0;break-inside:avoid;page-break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
+</style></head><body>
+<div class="toolbar">
+<h1>G10 — PDF de tous les badges</h1>
+<p class="muted">Outil de préparation : connexion Firebase autorisée, lecture seule de la V2, aucun QR créé ni aucune fiche modifiée. Les badges restent dans votre navigateur. Ne pas utiliser sur un appareil public.</p>
+<form id="login"><input id="email" type="email" autocomplete="username" placeholder="Email Firebase" required>
+<input id="password" type="password" autocomplete="current-password" placeholder="Mot de passe" required>
+<button type="submit">Se connecter et charger les badges</button></form>
+<button id="print" disabled>Imprimer / Enregistrer en PDF</button>
+<button id="logout" type="button" hidden>Se déconnecter et effacer les badges</button>
+<p id="message" role="status">Aucune donnée chargée.</p>
+</div><div class="sheet" id="badges"></div>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+'use strict';
+const cfg={apiKey:"AIzaSyA-Pduk1GBBJ2B1-fC3-f00l-WQO3Tiq-o",authDomain:"g10-transport-scolaire-v2.firebaseapp.com",databaseURL:"https://g10-transport-scolaire-v2-default-rtdb.europe-west1.firebasedatabase.app",projectId:"g10-transport-scolaire-v2",appId:"1:836907463780:web:585e2b4f075c8ff172db71"};
+firebase.initializeApp(cfg);
+const root='g10TransportScolaireV2/demoState/state';
+const el=id=>document.getElementById(id), message=txt=>{el('message').textContent=txt;};
+let locked=false;
+const clear=()=>{el('badges').replaceChildren();el('print').disabled=true;};
+function validate(state){
+ if(!state||!Array.isArray(state.subs))throw Error('Liste des abonnés V2 introuvable.');
+ const subs=state.subs;
+ if(!subs.length)throw Error('Aucun abonné dans la source V2 : export annulé.');
+ const seen=new Set();
+ for(let i=0;i<subs.length;i++){
+   const s=subs[i],ref=String(s.qrRef||'').trim();
+   if(!ref||!/^G10-TP-SCOL-QR[0-9]+$/i.test(ref))throw Error('Badge manquant ou référence QR invalide pour le dossier '+(i+1)+'. Aucune référence ne sera attribuée automatiquement.');
+   if(seen.has(ref.toUpperCase()))throw Error('Référence QR en double : '+ref+'. Export annulé.');
+   seen.add(ref.toUpperCase());
+ }
+ return subs;
+}
+function addBadge(s){
+ const badge=document.createElement('article');badge.className='badge';
+ const top=document.createElement('div');top.className='badge-top';
+ const logo=document.createElement('div');logo.className='logo';logo.innerHTML='<em>G</em>10 TRANSPORTS';
+ const sub=document.createElement('div');sub.className='sub';sub.textContent='TRANSPORT SCOLAIRE — BADGE INDIVIDUEL';
+ top.append(logo,sub);
+ const main=document.createElement('div');main.className='badge-main';
+ const left=document.createElement('div');
+ const name=document.createElement('div');name.className='name';name.textContent=s.name||'Nom non renseigné';
+ const school=document.createElement('div');school.className='school';school.textContent=[s.school||'',s.className||''].filter(Boolean).join(' — ');
+ left.append(name,school);
+ const qr=document.createElement('div');qr.className='qr';
+ main.append(left,qr);
+ const ref=document.createElement('div');ref.className='ref';ref.textContent=s.qrRef;
+ badge.append(top,main,ref);el('badges').append(badge);
+ const url=new URL('qr-test.html',location.href);url.searchParams.set('code',s.qrRef);url.searchParams.set('v','4');
+ new QRCode(qr,{text:url.href,width:90,height:90,correctLevel:QRCode.CorrectLevel.H});
+}
+el('login').addEventListener('submit',async ev=>{
+ ev.preventDefault();if(locked)return;locked=true;clear();message('Connexion et vérification des autorisations…');
+ try{
+  if(!window.QRCode)throw Error('Bibliothèque QR indisponible ; vérifier la connexion Internet.');
+  await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+  const user=(await firebase.auth().signInWithEmailAndPassword(el('email').value.trim(),el('password').value)).user;
+  el('password').value='';
+  const role=(await firebase.database().ref('g10TransportScolaireV3/roles/'+user.uid).once('value')).val();
+  if(!role||role.enabled!==true||!['admin','direction'].includes(role.role))throw Error('Accès administration non autorisé.');
+  const snap=await firebase.database().ref(root).once('value');
+  const subs=validate(snap.val());
+  for(const s of subs)addBadge(s);
+  el('print').disabled=false;el('logout').hidden=false;el('login').hidden=true;
+  message(subs.length+' badges chargés depuis la V2. Contrôler le nombre, puis choisir « Imprimer / Enregistrer en PDF ». Aucun enregistrement Firebase.');
+ }catch(e){
+  clear();message('Export non réalisé : '+(e.code||e.message||'Erreur inconnue'));el('password').value='';
+ }finally{locked=false;}
+});
+el('print').addEventListener('click',()=>{if(!el('print').disabled)window.print();});
+el('logout').addEventListener('click',async()=>{await firebase.auth().signOut();clear();el('login').hidden=false;el('logout').hidden=true;message('Session terminée ; badges effacés de la page.');});
+window.addEventListener('beforeunload',clear);
+})();
+</script></body></html>
