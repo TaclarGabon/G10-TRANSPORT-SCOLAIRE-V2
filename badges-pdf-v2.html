@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>G10 — Badges QR V2 · PDF</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#17324f;background:#eef4fb}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:1060px;margin:22px auto;padding:18px}
+h1{font-size:25px;margin:0 0 8px;color:#123d78}.small{color:#52697f;font-size:13px;line-height:1.5}
+.panel{background:white;border:1px solid #d6e4f2;border-radius:15px;padding:18px;margin:12px 0}
+form{display:flex;gap:12px;align-items:end;flex-wrap:wrap}label{display:grid;gap:5px;font-size:13px;font-weight:700}
+input{border:1px solid #b7cce0;padding:10px;border-radius:9px;font-size:15px}
+button{border:0;border-radius:10px;padding:12px 17px;background:#176fd1;color:#fff;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}.secondary{background:#e9f2fb;color:#17406c}
+#error{color:#a72a34;white-space:pre-wrap}#status{white-space:pre-wrap}
+#pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.badge{background:#fff;border:2px solid #efbf25;border-radius:13px;overflow:hidden;min-height:188px;break-inside:avoid;page-break-inside:avoid}
+.badge-head{background:#e5f4ff;border-bottom:4px solid #f3c62f;display:flex;justify-content:space-between;padding:11px 13px;align-items:center}
+.brand{color:#123d78;font-size:23px;font-weight:900}.zone{font-size:11px;color:#0b8750;font-weight:800}
+.badge-body{padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.badge-name{font-size:17px;font-weight:800;color:#123d78;overflow-wrap:anywhere}
+.badge-school{font-size:11px;line-height:1.4;margin-top:7px}.ref{font-size:10px;letter-spacing:.4px;font-weight:800;color:#245e8d;padding:0 12px 10px}
+.qr{width:116px;height:116px;flex:none}.qr canvas,.qr img{width:116px!important;height:116px!important}
+@page{size:A4 portrait;margin:11mm}
+@media print{
+ :root{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .shell{max-width:none;margin:0;padding:0} .no-print{display:none!important}
+ #pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5mm}
+ .badge{min-height:49mm;max-height:61mm}
+ .badge-head{padding:2mm 3mm}.badge-body{padding:2mm 3mm}.brand{font-size:18px}
+ .badge-name{font-size:13px}.qr,.qr canvas,.qr img{width:28mm!important;height:28mm!important}
+}
+</style></head><body><main class="shell">
+<section class="no-print"><h1>G10 — Badges QR de tous les abonnés V2</h1>
+<p class="small">Export à partir des dossiers existants, sans migration ni modification de Firebase. Les badges sont générés uniquement dans ton navigateur. Aucune liste d'élèves n'est publiée sur GitHub.</p>
+<div class="panel" id="loginPanel"><form id="loginForm">
+<label>Adresse email Firebase <input type="email" id="email" autocomplete="username" required></label>
+<label>Mot de passe <input type="password" id="password" autocomplete="current-password" required></label>
+<button type="submit" id="loginBtn">Se connecter et charger les badges</button></form></div>
+<div class="panel"><p id="status" role="status">En attente de connexion.</p><p id="error" role="alert"></p>
+<button id="printBtn" disabled>Imprimer / Enregistrer en PDF</button>
+<button class="secondary" id="logoutBtn" hidden>Se déconnecter</button>
+<p class="small" id="warnings"></p></div></section>
+<section id="pages" aria-label="Badges QR à imprimer"></section></main>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+'use strict';
+const cfg={apiKey:"AIzaSyA-Pduk1GBBJ2B1-fC3-f00l-WQO3Tiq-o",authDomain:"g10-transport-scolaire-v2.firebaseapp.com",databaseURL:"https://g10-transport-scolaire-v2-default-rtdb.europe-west1.firebasedatabase.app",projectId:"g10-transport-scolaire-v2",appId:"1:836907463780:web:585e2b4f075c8ff172db71"};
+const ROOT='g10TransportScolaireV2/demoState/state';
+const ROLES='g10TransportScolaireV3/roles';
+const el=id=>document.getElementById(id);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
+const sublist=s=>Array.isArray(s)?s.filter(x=>x&&typeof x==='object'):s&&typeof s==='object'?Object.values(s).filter(x=>x&&typeof x==='object'):null;
+function codeUrl(ref){
+  const url=new URL('qr-test.html',location.href);
+  url.searchParams.set('code',ref);
+  url.searchParams.set('v','4');
+  return url.href;
+}
+function prepared(data){
+  const seen=new Set(),duplicates=[],missing=[],rows=[];
+  const subs=sublist(data);
+  if(!subs)throw Error('La liste des abonnés V2 est absente ou dans un format non reconnu.');
+  subs.forEach((s,i)=>{
+    const ref=String(s.qrRef||'').trim();
+    if(!ref){missing.push(i+1);return;}
+    if(seen.has(ref)){duplicates.push(ref);return;}
+    seen.add(ref);rows.push({ref,name:String(s.name||'Nom non renseigné'),school:String(s.school||''),className:String(s.className||''),zone:String(s.serviceZone||'Akanda')});
+  });
+  return {total:subs.length,rows,duplicates,missing};
+}
+function reset(){
+  el('pages').replaceChildren();el('printBtn').disabled=true;el('warnings').textContent='';
+}
+async function login(ev){
+  ev.preventDefault();reset();el('error').textContent='';el('loginBtn').disabled=true;
+  el('status').textContent='Connexion en cours…';
+  try{
+    if(!window.firebase||!window.QRCode)throw Error('Une bibliothèque nécessaire ne s’est pas chargée. Vérifier la connexion internet.');
+    if(!firebase.apps.length)firebase.initializeApp(cfg);
+    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+    const user=(await firebase.auth().signInWithEmailAndPassword(el('email').value.trim(),el('password').value)).user;
+    el('password').value='';
+    const role=(await firebase.database().ref(ROLES+'/'+user.uid).once('value')).val();
+    if(!role||role.enabled!==true||!['admin','direction'].includes(role.role))throw Error('Compte non autorisé pour l’export des badges.');
+    const state=(await firebase.database().ref(ROOT).once('value')).val();
+    if(!state||typeof state!=='object')throw Error('Données V2 indisponibles.');
+    const p=prepared(state.subs);
+    if(p.duplicates.length)throw Error('Références QR en double détectées ('+p.duplicates.length+'). Export bloqué : correction à examiner sans modifier les dossiers.');
+    if(p.missing.length)el('warnings').textContent=p.missing.length+' abonné(s) sans référence QR : aucun nouveau code n’a été attribué. Leur badge ne figure pas dans le PDF.';
+    if(!p.rows.length)throw Error('Aucun badge QR existant à imprimer.');
+    const host=el('pages');
+    for(const item of p.rows){
+      const badge=document.createElement('article');badge.className='badge';
+      badge.innerHTML='<div class="badge-head"><span class="brand">G10</span><span class="zone">'+esc(item.zone)+'</span></div>'+
+        '<div class="badge-body"><div><div class="badge-name">'+esc(item.name)+'</div><div class="badge-school">'+esc(item.school)+'<br>'+esc(item.className)+'</div></div><div class="qr"></div></div>'+
+        '<div class="ref">'+esc(item.ref)+'</div>';
+      host.appendChild(badge);
+      new QRCode(badge.querySelector('.qr'),{text:codeUrl(item.ref),width:116,height:116,correctLevel:QRCode.CorrectLevel.H});
+    }
+    el('status').textContent=p.rows.length+' badges prêts sur '+p.total+' dossiers V2. Cliquer « Imprimer / Enregistrer en PDF » puis choisir « Enregistrer au format PDF ».';
+    el('printBtn').disabled=false;el('logoutBtn').hidden=false;
+    el('loginPanel').hidden=true;
+  }catch(e){
+    reset();el('status').textContent='Export non disponible.';
+    el('error').textContent=e?.message||'Erreur de connexion.';
+  }finally{el('password').value='';el('loginBtn').disabled=false;}
+}
+el('loginForm').addEventListener('submit',login);
+el('printBtn').addEventListener('click',()=>{if(!el('printBtn').disabled)window.print()});
+el('logoutBtn').addEventListener('click',async()=>{
+  reset();if(window.firebase&&firebase.apps.length)await firebase.auth().signOut();
+  el('loginPanel').hidden=false;el('logoutBtn').hidden=true;el('status').textContent='Déconnecté.';el('error').textContent='';
+});
+})();
+</script></body></html>
