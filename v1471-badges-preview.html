@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>G10 V2 — Prévisualisation export badges PDF (non publié)</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef4fb}
+#app{border:0;width:100%;height:100%;display:block}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:#eef4fb;color:#123d78;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-weight:900;z-index:5}
+</style>
+</head>
+<body>
+<div id="loading">Chargement G10 Transport Scolaire V1.47.1…</div>
+<iframe id="app" src="index.html?v=1471"></iframe>
+<script>
+(function(){
+ var f=document.getElementById("app"),l=document.getElementById("loading");
+ f.addEventListener("load",function(){
+   try{
+     var d=f.contentDocument;
+     var s1=d.createElement("script");
+     s1.src="g10-qr-school-v146.js?v=14716";
+     d.body.appendChild(s1);
+     s1.onload=function(){
+       var s2=d.createElement("script");
+       s2.src="g10-payments-v147.js?v=14715";
+       d.body.appendChild(s2);
+       var s3=d.createElement("script");
+       s3.src="g10-circuit-dynamic-v1471.js?v=14717";
+       d.body.appendChild(s3);
+       s3.onload=function(){
+         var s4=d.createElement("script");
+         s4.src="g10-badges-pdf-v1471.js?v=badgepreview1";
+         d.body.appendChild(s4);
+       };
+     };
+     // Onglet Abonnement : affichage uniquement, donnees conservees.
+    var tries=0;
+    var subscriptionTimer=setInterval(function(){
+      try{
+        var doc=f.contentDocument;
+        if(!doc) return;
+        var navs=Array.prototype.slice.call(doc.querySelectorAll(".top,nav"));
+        var nav=navs.find(function(n){return Array.prototype.some.call(n.querySelectorAll("button"),function(b){return /^Abonnés$/i.test(b.textContent.trim());});});
+        if(!nav){if(++tries>=40)clearInterval(subscriptionTimer);return;}
+        if(doc.getElementById("g10-abonnement-tab")){clearInterval(subscriptionTimer);return;}
+        var abo=Array.prototype.find.call(nav.querySelectorAll("button"),function(b){return /^Abonnés$/i.test(b.textContent.trim());});
+        var btn=doc.createElement("button");btn.id="g10-abonnement-tab";btn.type="button";btn.textContent="Abonnement";
+        btn.onclick=function(){
+          var old=doc.getElementById("g10-abonnement-preview");
+          if(old){old.remove();return;}
+          var div=doc.createElement("div");div.id="g10-abonnement-preview";
+          div.style.cssText="padding:14px;margin:8px 0;border:1px solid #dce6f0;border-radius:12px;background:#fff;color:#17324f";
+          div.textContent="Abonnement — rubrique en cours de validation. Aucune donnée modifiée.";
+          nav.insertAdjacentElement("afterend",div);
+        };
+        abo.insertAdjacentElement("afterend",btn);clearInterval(subscriptionTimer);
+      }catch(e){clearInterval(subscriptionTimer);}
+    },400);
+    l.style.display="none";
+   }catch(e){
+     l.textContent="Impossible de charger la V1.47.1 : "+e.message;
+   }
+ });
+})();
+</script>
+</body>
+</html>
